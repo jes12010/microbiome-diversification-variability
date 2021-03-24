@@ -8,7 +8,7 @@ output: html_document
 ```{r setup, include=FALSE,warning=F,message=F}
 library(geodist)
 gpsdat <- read.csv('data/gps-data.csv')
-str(gpsdat)
+#str(gpsdat)
 gpsdat$Latitude <- as.numeric(gpsdat$Latitude)
 gpsdat$Longitude <- as.numeric(gpsdat$Longitude)
 ```
@@ -19,7 +19,7 @@ Distance is in meters - see geodist vignettes.
 library(tidyverse)
 site_coords <- gpsdat %>% select(Longitude,Latitude)
 rownames(site_coords) <- c(gpsdat$Local.Label)
-distmat <- geodist(site_coords)
+distmat <- geodist(site_coords,measure="geodesic") # geodesic distance
 max(distmat,na.rm=T) # max distance ~241m
 
 ```
