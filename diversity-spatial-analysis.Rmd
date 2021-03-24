@@ -1,0 +1,35 @@
+---
+title: "Diversification trial analysis"
+author: "Jennifer Schmidt"
+date: "3/5/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE,warning=F,message=F}
+library(geodist)
+gpsdat <- read.csv('data/gps-data.csv')
+str(gpsdat)
+gpsdat$Latitude <- as.numeric(gpsdat$Latitude)
+gpsdat$Longitude <- as.numeric(gpsdat$Longitude)
+```
+
+## Calculate distance matrix for distance between sampling locations
+Distance is in meters - see geodist vignettes.
+```{r }
+library(tidyverse)
+site_coords <- gpsdat %>% select(Longitude,Latitude)
+rownames(site_coords) <- c(gpsdat$Local.Label)
+distmat <- geodist(site_coords)
+max(distmat,na.rm=T) # max distance ~241m
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
