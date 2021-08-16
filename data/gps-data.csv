@@ -1,22 +1,22 @@
 ID,Country,Institution,Farm,Block,Local Label,Lab_ID,DNA_ng_ul,Field_Group,X_Decimal degree coordinate,Y_Decimal degree coordinate,Longitude,Latitude,Harvested_healthy,Harvested_infected,Dry_beans_kg
-SOIL 01,Indonesia,MRCC,Tarengge,16,CAC_07,SOIL 01,4.6,08,"E120 48' 19.523""","S2 33' 8.871""",120.8325383,-2.5514785,9,22,0.5985
-SOIL 02,Indonesia,MRCC,Tarengge,16,CAC_10,SOIL 02,4.8,08,"E120 48' 19.721""","S2 33' 8.882""",120.8328683,-2.551480333,12,3,0.87605
+SOIL 01,Indonesia,MRCC,Tarengge,16,CAC_07,SOIL 01,4.6,8,"E120 48' 19.523""","S2 33' 8.871""",120.8325383,-2.5514785,9,22,0.5985
+SOIL 02,Indonesia,MRCC,Tarengge,16,CAC_10,SOIL 02,4.8,8,"E120 48' 19.721""","S2 33' 8.882""",120.8328683,-2.551480333,12,3,0.87605
 SOIL 33,Indonesia,MRCC,Tarengge,16,CAC_101,SOIL 33,7.2,12,"E120 48' 19.390""","S2 33' 9.690""",120.8323167,-2.551615,14,0,0.6573
 SOIL 34,Indonesia,MRCC,Tarengge,16,CAC_103,SOIL 34,6.2,11,"E120 48' 19.399""","S2 33' 9.506""",120.8323317,-2.551584333,1,15,0.1211
-SOIL 35,Indonesia,MRCC,Tarengge,16,CAC_106,SOIL 35,5.4,02,"E120 48' 19.243""","S2 33' 9.590""",120.8320717,-2.551598333,7,9,0.5341
+SOIL 35,Indonesia,MRCC,Tarengge,16,CAC_106,SOIL 35,5.4,2,"E120 48' 19.243""","S2 33' 9.590""",120.8320717,-2.551598333,7,9,0.5341
 SOIL 03,Indonesia,MRCC,Tarengge,16,CAC_11,SOIL 03,4.7,13,"E120 48' 19.808""","S2 33' 8.984""",120.8330133,-2.551497333,9,3,0.6125
-SOIL 36,Indonesia,MRCC,Tarengge,16,CAC_112,SOIL 36,5.3,03,"E120 48' 19.473""","S2 33' 9.847""",120.832455,-2.551641167,7,5,0.5593
-SOIL 37,Indonesia,MRCC,Tarengge,16,CAC_115,SOIL 37,5.6,03,"E120 48' 19.768""","S2 33' 9.862""",120.8329467,-2.551643667,21,17,1.28443
+SOIL 36,Indonesia,MRCC,Tarengge,16,CAC_112,SOIL 36,5.3,3,"E120 48' 19.473""","S2 33' 9.847""",120.832455,-2.551641167,7,5,0.5593
+SOIL 37,Indonesia,MRCC,Tarengge,16,CAC_115,SOIL 37,5.6,3,"E120 48' 19.768""","S2 33' 9.862""",120.8329467,-2.551643667,21,17,1.28443
 SOIL 38,Indonesia,MRCC,Tarengge,16,CAC_116,SOIL 38,6,16,"E120 48' 19.769""","S2 33' 9.764""",120.8329483,-2.551627333,5,4,0.40495
-SOIL 39,Indonesia,MRCC,Tarengge,16,CAC_118,SOIL 39,5.3,04,"E120 48' 19.958""","S2 33' 9.871""",120.8332633,-2.551645167,9,12,0.5789
-SOIL 40,Indonesia,MRCC,Tarengge,16,CAC_121,SOIL 40,6.7,04,"E120 48' 20.200""","S2 33' 9.884""",120.8336667,-2.551647333,14,15,0.78736
+SOIL 39,Indonesia,MRCC,Tarengge,16,CAC_118,SOIL 39,5.3,4,"E120 48' 19.958""","S2 33' 9.871""",120.8332633,-2.551645167,9,12,0.5789
+SOIL 40,Indonesia,MRCC,Tarengge,16,CAC_121,SOIL 40,6.7,4,"E120 48' 20.200""","S2 33' 9.884""",120.8336667,-2.551647333,14,15,0.78736
 SOIL 41,Indonesia,MRCC,Tarengge,16,CAC_131,SOIL 41,6.1,32,"E120 48' 19.440""","S2 33' 10.497""",120.8324,-2.5517495,13,3,0.8491
 SOIL 42,Indonesia,MRCC,Tarengge,16,CAC_134,SOIL 42,5.4,37,"E120 48' 19.726""","S2 33' 10.609""",120.8328767,-2.551768167,17,7,1.12805
 SOIL 43,Indonesia,MRCC,Tarengge,16,CAC_135,SOIL 43,6.4,32,"E120 48' 19.736""","S2 33' 10.512""",120.8328933,-2.551752,17,5,1.1228
 SOIL 44,Indonesia,MRCC,Tarengge,16,CAC_137,SOIL 44,6.3,31,"E120 48' 19.925""","S2 33' 10.521""",120.8332083,-2.5517535,14,12,1.1389
 SOIL 45,Indonesia,MRCC,Tarengge,16,CAC_140,SOIL 45,7.1,31,"E120 48' 20.168""","S2 33' 10.534""",120.8336133,-2.551755667,26,2,1.5477
 SOIL 46,Indonesia,MRCC,Tarengge,16,CAC_144,SOIL 46,4.8,30,"E120 48' 20.361""","S2 33' 10.544""",120.833935,-2.551757333,30,5,2.23265
-SOIL 04,Indonesia,MRCC,Tarengge,16,CAC_15,SOIL 04,4.7,07,"E120 48' 20.007""","S2 33' 8.896""",120.833345,-2.551482667,20,4,1.13624
+SOIL 04,Indonesia,MRCC,Tarengge,16,CAC_15,SOIL 04,4.7,7,"E120 48' 20.007""","S2 33' 8.896""",120.833345,-2.551482667,20,4,1.13624
 SOIL 47,Indonesia,MRCC,Tarengge,16,CAC_151,SOIL 47,6.4,30,"E120 48' 20.298""","S2 33' 10.834""",120.83383,-2.551805667,3,23,0.36855
 SOIL 48,Indonesia,MRCC,Tarengge,16,CAC_153,SOIL 48,5.6,46,"E120 48' 20.132""","S2 33' 10.870""",120.8335533,-2.551811667,14,8,0.7861
 SOIL 49,Indonesia,MRCC,Tarengge,16,CAC_154,SOIL 49,7.2,45,"E120 48' 20.158""","S2 33' 10.729""",120.8335967,-2.551788167,2,2,0.2191
@@ -30,7 +30,7 @@ SOIL 56,Indonesia,MRCC,Tarengge,16,CAC_168,SOIL 56,5.9,34,"E120 48' 19.515""","S
 SOIL 57,Indonesia,MRCC,Tarengge,16,CAC_170,SOIL 57,5.9,34,"E120 48' 19.332""","S2 33' 10.828""",120.83222,-2.551804667,3,3,0.2779
 SOIL 58,Indonesia,MRCC,Tarengge,16,CAC_172,SOIL 58,6.4,33,"E120 48' 19.341""","S2 33' 10.644""",120.832235,-2.551774,4,11,0.33425
 SOIL 59,Indonesia,MRCC,Tarengge,16,CAC_176,SOIL 59,5.3,25,"E120 48' 19.186""","S2 33' 10.728""",120.8319767,-2.551788,4,1,0.3528
-SOIL 05,Indonesia,MRCC,Tarengge,16,CAC_18,SOIL 05,4.1,07,"E120 48' 20.250""","S2 33' 8.909""",120.83375,-2.551484833,18,13,1.3118
+SOIL 05,Indonesia,MRCC,Tarengge,16,CAC_18,SOIL 05,4.1,7,"E120 48' 20.250""","S2 33' 8.909""",120.83375,-2.551484833,18,13,1.3118
 SOIL 60,Indonesia,MRCC,Tarengge,16,CAC_181,SOIL 60,5.5,34,"E120 48' 19.416""","S2 33' 10.984""",120.83236,-2.551830667,12,7,0.7665
 SOIL 61,Indonesia,MRCC,Tarengge,16,CAC_188,SOIL 61,8.9,42,"E120 48' 19.901""","S2 33' 11.009""",120.8331683,-2.551834833,0,0,0
 SOIL 62,Indonesia,MRCC,Tarengge,16,CAC_196,SOIL 62,4.5,29,"E120 48' 20.332""","S2 33' 11.129""",120.8338867,-2.551854833,5,33,0.959
@@ -42,7 +42,7 @@ SOIL 67,Indonesia,MRCC,Tarengge,16,CAC_211,SOIL 67,6.5,44,"E120 48' 19.975""","S
 SOIL 68,Indonesia,MRCC,Tarengge,16,CAC_213,SOIL 68,7.5,44,"E120 48' 19.792""","S2 33' 11.340""",120.8329867,-2.55189,4,8,0.231
 SOIL 69,Indonesia,MRCC,Tarengge,16,CAC_215,SOIL 69,5,43,"E120 48' 19.802""","S2 33' 11.156""",120.8330033,-2.551859333,4,0,0.2646
 SOIL 70,Indonesia,MRCC,Tarengge,16,CAC_218,SOIL 70,3.5,39,"E120 48' 19.651""","S2 33' 11.143""",120.8327517,-2.551857167,18,1,0.945
-SOIL 06,Indonesia,MRCC,Tarengge,16,CAC_22,SOIL 06,4.2,06,"E120 48' 20.444""","S2 33' 8.919""",120.8340733,-2.5514865,10,15,0.7091
+SOIL 06,Indonesia,MRCC,Tarengge,16,CAC_22,SOIL 06,4.2,6,"E120 48' 20.444""","S2 33' 8.919""",120.8340733,-2.5514865,10,15,0.7091
 SOIL 71,Indonesia,MRCC,Tarengge,16,CAC_221,SOIL 71,10.8,35,"E120 48' 19.500""","S2 33' 11.141""",120.8325,-2.551856833,27,3,1.29395
 SOIL 72,Indonesia,MRCC,Tarengge,16,CAC_223,SOIL 72,5.5,36,"E120 48' 19.490""","S2 33' 11.325""",120.8324833,-2.5518875,9,8,0.54845
 SOIL 73,Indonesia,MRCC,Tarengge,16,CAC_225,SOIL 73,6.2,36,"E120 48' 19.307""","S2 33' 11.315""",120.8321783,-2.551885833,18,5,1.1214
@@ -53,7 +53,7 @@ SOIL 77,Indonesia,MRCC,Tarengge,16,CAC_243,SOIL 77,4.6,27,"E120 48' 19.654""","S
 SOIL 78,Indonesia,MRCC,Tarengge,16,CAC_244,SOIL 78,4.6,40,"E120 48' 19.708""","S2 33' 11.381""",120.8328467,-2.551896833,10,2,0.71785
 SOIL 79,Indonesia,MRCC,Tarengge,16,CAC_247,SOIL 79,4.6,28,"E120 48' 19.898""","S2 33' 11.494""",120.8331633,-2.551915667,25,7,1.3622
 SOIL 80,Indonesia,MRCC,Tarengge,16,CAC_250,SOIL 80,3.9,28,"E120 48' 20.118""","S2 33' 11.509""",120.83353,-2.551918167,7,18,0.336
-SOIL 07,Indonesia,MRCC,Tarengge,16,CAC_28,SOIL 07,4,06,"E120 48' 20.380""","S2 33' 9.209""",120.8339667,-2.551534833,13,15,1.1851
+SOIL 07,Indonesia,MRCC,Tarengge,16,CAC_28,SOIL 07,4,6,"E120 48' 20.380""","S2 33' 9.209""",120.8339667,-2.551534833,13,15,1.1851
 SOIL 08,Indonesia,MRCC,Tarengge,16,CAC_31,SOIL 08,3.9,21,"E120 48' 20.240""","S2 33' 9.104""",120.8337333,-2.551517333,0,0,0
 SOIL 09,Indonesia,MRCC,Tarengge,16,CAC_32,SOIL 09,6.2,22,"E120 48' 20.214""","S2 33' 9.245""",120.83369,-2.551540833,10,10,0.6468
 SOIL 10,Indonesia,MRCC,Tarengge,16,CAC_34,SOIL 10,4.4,17,"E120 48' 20.091""","S2 33' 9.053""",120.833485,-2.551508833,20,4,1.2726
@@ -61,15 +61,15 @@ SOIL 11,Indonesia,MRCC,Tarengge,16,CAC_35,SOIL 11,4.5,18,"E120 48' 20.082""","S2
 SOIL 12,Indonesia,MRCC,Tarengge,16,CAC_37,SOIL 12,4.6,18,"E120 48' 19.899""","S2 33' 9.227""",120.833165,-2.551537833,12,0,0.68145
 SOIL 13,Indonesia,MRCC,Tarengge,16,CAC_39,SOIL 13,3.9,17,"E120 48' 19.908""","S2 33' 9.043""",120.83318,-2.551507167,11,6,0.7742
 SOIL 14,Indonesia,MRCC,Tarengge,16,CAC_41,SOIL 14,3.5,14,"E120 48' 19.748""","S2 33' 9.225""",120.8329133,-2.5515375,2,2,0.11795
-SOIL 15,Indonesia,MRCC,Tarengge,16,CAC_42,SOIL 15,3.7,09,"E120 48' 19.606""","S2 33' 9.028""",120.8326767,-2.551504667,17,6,1.015
+SOIL 15,Indonesia,MRCC,Tarengge,16,CAC_42,SOIL 15,3.7,9,"E120 48' 19.606""","S2 33' 9.028""",120.8326767,-2.551504667,17,6,1.015
 SOIL 16,Indonesia,MRCC,Tarengge,16,CAC_44,SOIL 16,3.9,10,"E120 48' 19.597""","S2 33' 9.212""",120.8326617,-2.551535333,5,9,0.48055
 SOIL 17,Indonesia,MRCC,Tarengge,16,CAC_46,SOIL 17,4.4,10,"E120 48' 19.414""","S2 33' 9.203""",120.8323567,-2.551533833,6,8,0.53725
-SOIL 18,Indonesia,MRCC,Tarengge,16,CAC_48,SOIL 18,5,09,"E120 48' 19.423""","S2 33' 9.019""",120.8323717,-2.551503167,12,8,1.39055
-SOIL 19,Indonesia,MRCC,Tarengge,16,CAC_50,SOIL 19,3.6,01,"E120 48' 19.268""","S2 33' 9.103""",120.8321133,-2.551517167,3,2,0.13195
+SOIL 18,Indonesia,MRCC,Tarengge,16,CAC_48,SOIL 18,5,9,"E120 48' 19.423""","S2 33' 9.019""",120.8323717,-2.551503167,12,8,1.39055
+SOIL 19,Indonesia,MRCC,Tarengge,16,CAC_50,SOIL 19,3.6,1,"E120 48' 19.268""","S2 33' 9.103""",120.8321133,-2.551517167,3,2,0.13195
 SOIL 20,Indonesia,MRCC,Tarengge,16,CAC_57,SOIL 20,5,11,"E120 48' 19.498""","S2 33' 9.359""",120.8324967,-2.551559833,8,11,0.5705
 SOIL 21,Indonesia,MRCC,Tarengge,16,CAC_64,SOIL 21,5.1,19,"E120 48' 19.983""","S2 33' 9.384""",120.833305,-2.551564,0,0,0
-SOIL 22,Indonesia,MRCC,Tarengge,16,CAC_75,SOIL 22,6.6,05,"E120 48' 20.399""","S2 33' 9.476""",120.8339983,-2.551579333,17,12,1.14415
-SOIL 23,Indonesia,MRCC,Tarengge,16,CAC_78,SOIL 23,4.2,05,"E120 48' 20.404""","S2 33' 9.699""",120.8340067,-2.5516165,0,20,0.168
+SOIL 22,Indonesia,MRCC,Tarengge,16,CAC_75,SOIL 22,6.6,5,"E120 48' 20.399""","S2 33' 9.476""",120.8339983,-2.551579333,17,12,1.14415
+SOIL 23,Indonesia,MRCC,Tarengge,16,CAC_78,SOIL 23,4.2,5,"E120 48' 20.404""","S2 33' 9.699""",120.8340067,-2.5516165,0,20,0.168
 SOIL 24,Indonesia,MRCC,Tarengge,16,CAC_81,SOIL 24,6.3,24,"E120 48' 20.210""","S2 33' 9.689""",120.8336833,-2.551614833,0,0,0
 SOIL 25,Indonesia,MRCC,Tarengge,16,CAC_82,SOIL 25,6.5,23,"E120 48' 20.199""","S2 33' 9.546""",120.833665,-2.551591,0,0,0
 SOIL 26,Indonesia,MRCC,Tarengge,16,CAC_85,SOIL 26,4.5,19,"E120 48' 20.066""","S2 33' 9.540""",120.8334433,-2.55159,1,11,0.14875
@@ -79,23 +79,23 @@ SOIL 29,Indonesia,MRCC,Tarengge,16,CAC_91,SOIL 29,7.2,19,"E120 48' 19.884""","S2
 SOIL 30,Indonesia,MRCC,Tarengge,16,CAC_94,SOIL 30,4.4,15,"E120 48' 19.733""","S2 33' 9.518""",120.8328883,-2.551586333,6,3,0.49105
 SOIL 31,Indonesia,MRCC,Tarengge,16,CAC_97,SOIL 31,4.9,11,"E120 48' 19.582""","S2 33' 9.516""",120.8326367,-2.551586,5,12,0.44751
 SOIL 32,Indonesia,MRCC,Tarengge,16,CAC_99,SOIL 32,5,12,"E120 48' 19.572""","S2 33' 9.699""",120.83262,-2.5516165,13,2,0.68992
-SOIL 81,Indonesia,MRCC,Tarengge,17,Control_01,SOIL 81,6.5,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,,,
-SOIL 82,Indonesia,MRCC,Tarengge,17,Control_02,SOIL 82,6.1,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,,,
-SOIL 83,Indonesia,MRCC,Tarengge,17,Control_03,SOIL 83,5.6,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,,,
-SOIL 84,Indonesia,MRCC,Tarengge,17,Control_04,SOIL 84,4.7,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,,,
-SOIL 85,Indonesia,MRCC,Tarengge,17,Control_05,SOIL 85,4.6,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,,,
-SOIL 86,Indonesia,MRCC,Tarengge,17,Control_06,SOIL 86,6.4,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,,,
-SOIL 87,Indonesia,MRCC,Tarengge,17,Control_07,SOIL 87,5.5,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,,,
-SOIL 88,Indonesia,MRCC,Tarengge,17,Control_08,SOIL 88,5.7,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,,,
-SOIL 89,Indonesia,MRCC,Tarengge,17,Control_09,SOIL 89,8,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,,,
-SOIL 90,Indonesia,MRCC,Tarengge,17,Control_10,SOIL 90,11,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,,,
-SOIL 91,Indonesia,MRCC,Tarengge,17,Control_11,SOIL 91,4.5,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,,,
-SOIL 92,Indonesia,MRCC,Tarengge,17,Control_12,SOIL 92,4.5,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,,,
-SOIL 93,Indonesia,MRCC,Tarengge,17,Control_13,SOIL 93,11,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,,,
-SOIL 94,Indonesia,MRCC,Tarengge,17,Control_14,SOIL 94,10.9,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,,,
-SOIL 95,Indonesia,MRCC,Tarengge,17,Control_15,SOIL 95,6.2,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,,,
-SOIL 96,Indonesia,MRCC,Tarengge,17,Control_16,SOIL 96,4.2,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,,,
-SOIL 97,Indonesia,MRCC,Tarengge,17,Control_17,SOIL 97,5.1,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,,,
-SOIL 98,Indonesia,MRCC,Tarengge,17,Control_18,SOIL 98,6.4,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,,,
-SOIL 99,Indonesia,MRCC,Tarengge,17,Control_19,SOIL 99,7.2,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,,,
-SOIL 100,Indonesia,MRCC,Tarengge,17,Control_20,SOIL 100,7.6,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,Awaiting Data from Hamran,,,
+SOIL 81,Indonesia,MRCC,Tarengge,17,Control_01,SOIL 81,6.5,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,120.805886,-2.552520,,,
+SOIL 82,Indonesia,MRCC,Tarengge,17,Control_02,SOIL 82,6.1,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,120.805972,-2.552495,,,
+SOIL 83,Indonesia,MRCC,Tarengge,17,Control_03,SOIL 83,5.6,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,120.806067,-2.552524,,,
+SOIL 84,Indonesia,MRCC,Tarengge,17,Control_04,SOIL 84,4.7,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,120.806159,-2.552523,,,
+SOIL 85,Indonesia,MRCC,Tarengge,17,Control_05,SOIL 85,4.6,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,120.806253,-2.552568,,,
+SOIL 86,Indonesia,MRCC,Tarengge,17,Control_06,SOIL 86,6.4,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,120.805881,-2.552785,,,
+SOIL 87,Indonesia,MRCC,Tarengge,17,Control_07,SOIL 87,5.5,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,120.805989,-2.552821,,,
+SOIL 88,Indonesia,MRCC,Tarengge,17,Control_08,SOIL 88,5.7,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,120.806124,-2.552809,,,
+SOIL 89,Indonesia,MRCC,Tarengge,17,Control_09,SOIL 89,8,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,120.806100,-2.552887,,,
+SOIL 90,Indonesia,MRCC,Tarengge,17,Control_10,SOIL 90,11,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,120.805981,-2.552905,,,
+SOIL 91,Indonesia,MRCC,Tarengge,17,Control_11,SOIL 91,4.5,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,120.805861,-2.552877,,,
+SOIL 92,Indonesia,MRCC,Tarengge,17,Control_12,SOIL 92,4.5,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,120.806114,-2.552999,,,
+SOIL 93,Indonesia,MRCC,Tarengge,17,Control_13,SOIL 93,11,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,120.806006,-2.553007,,,
+SOIL 94,Indonesia,MRCC,Tarengge,17,Control_14,SOIL 94,10.9,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,120.805877,-2.552978,,,
+SOIL 95,Indonesia,MRCC,Tarengge,17,Control_15,SOIL 95,6.2,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,120.806092,-2.553076,,,
+SOIL 96,Indonesia,MRCC,Tarengge,17,Control_16,SOIL 96,4.2,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,120.805972,-2.553097,,,
+SOIL 97,Indonesia,MRCC,Tarengge,17,Control_17,SOIL 97,5.1,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,120.805828,-2.553077,,,
+SOIL 98,Indonesia,MRCC,Tarengge,17,Control_18,SOIL 98,6.4,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,120.806104,-2.553165,,,
+SOIL 99,Indonesia,MRCC,Tarengge,17,Control_19,SOIL 99,7.2,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,120.805988,-2.553200,,,
+SOIL 100,Indonesia,MRCC,Tarengge,17,Control_20,SOIL 100,7.6,Block 17,Awaiting Data from Hamran,Awaiting Data from Hamran,120.805868,-2.553168,,,
