@@ -17,16 +17,16 @@ ps16S <- readRDS("tarengge16S.rds")
 psITS <- readRDS("tarenggeITS.rds")
 shade <- read.csv("data/shade_trees.csv")
 
-#add shade trees to sample data
-sample_data(ps16S)<-left_join(data.frame(sample_data(ps16S)),shade,by="ID")%>%column_to_rownames("Local.Label.x")
-sample_data(psITS)<-left_join(data.frame(sample_data(psITS)),shade,by="ID")%>%column_to_rownames("Local.Label.x")
+head(sample_data(psITS))
+
 
 controls <- str_subset(sample_data(ps16S)$Local.Label.y,"Control")
-sample_data(ps16S)$Group<- ifelse(sample_data(ps16S)$Local.Label.y %in% controls,"Control","Diversification")
-sample_data(psITS)$Group<- ifelse(sample_data(psITS)$Local.Label.y %in% controls,"Control","Diversification")
 
 ps16S_samples <- subset_samples(ps16S,Group=="Diversification")
 psITS_samples <- subset_samples(psITS,Group=="Diversification")
+
+ps16S_controls <- subset_samples(ps16S,Group=="Monoculture")
+psITS_controls <- subset_samples(psITS,Group=="Monoculture")
 ```
 
 ## Calculate distance matrix for distance between sampling locations
@@ -34,12 +34,20 @@ Distance is in meters - see geodist vignettes.
 ```{r }
 site_coordsB <- sample_data(ps16S) %>% data.frame() %>% select(Longitude,Latitude) 
 distgeoB <- geodist(site_coordsB,measure="geodesic") # geodesic distance
-max(distgeoB,na.rm=T) # max distance ~3146m if controls from adjacent plot are included
-#hist(distgeoB)
+max(distgeoB,na.rm=T) # max distance ~115m 
+hist(distgeoB)
 
 distgeoB_samples <- geodist(site_coordsB[21:88,],measure="geodesic")
-#hist(distgeoB_samples)
-max(distgeoB_samples,na.rm=T) # only 241.5m within samples
+hist(distgeoB_samples)
+max(distgeoB_samples,na.rm=T) # only 86m within samples
+distgeoB_controls <- geodist(site_coordsB[1:20,],measure="geodesic")
+hist(distgeoB_controls) # 80 m
+
+# distance to shade tree - only makes sense to include distances <5m if we assume litterfall, fine roots, etc. only impact the area directly around the tree
+sample_data(ps16S)$Dist_shade <- geodist(data.frame(Longitude=sample_data(ps16S)$Longitude,Latitude=sample_data(ps16S)$Latitude),data.frame(Longitude=sample_data(ps16S)$Shade_Longitude,Latitude=sample_data(ps16S)$Shade_Latitude),paired=TRUE,measure="geodesic")
+
+hist(sample_data(ps16S)$Dist_shade)
+
 
 # Fungi
 site_coordsF <- sample_data(psITS) %>% data.frame() %>% rownames_to_column("rownames") %>% select(rownames,Longitude,Latitude) %>%arrange(rownames)%>%column_to_rownames("rownames") # need to arrange by sample name to have controls at the top
@@ -47,16 +55,28 @@ distgeoF <- geodist(site_coordsF,measure="geodesic") # geodesic distance
 max(distgeoF,na.rm=T) # checking that it's the same
 distgeoF_samples <- geodist(site_coordsF[21:99,],measure="geodesic")
 hist(distgeoF_samples)
-max(distgeoF_samples,na.rm=T) # only 241.5m within samples
+max(distgeoF_samples,na.rm=T) # 86m within samples
+
+distgeoF_controls <- geodist(site_coordsF[1:20,],measure="geodesic")
+hist(distgeoF_controls)
+
+sample_data(psITS)$Dist_shade <- geodist(data.frame(Longitude=sample_data(psITS)$Longitude,Latitude=sample_data(psITS)$Latitude),data.frame(Longitude=sample_data(psITS)$Shade_Longitude,Latitude=sample_data(psITS)$Shade_Latitude),paired=TRUE,measure="geodesic")
+hist(sample_data(psITS)$Dist_shade)
 ```
 
 ## Bray-Curtis dissimilarity matrices
 ```{r}
-distbrayB=vegdist(otu_table(ps16S), distance="bray")
-distbrayF=vegdist(otu_table(psITS), distance="bray")
+distbrayB=vegdist(data.frame(otu_table(ps16S)), distance="bray")%>%as.matrix()
+distjaccardB = vegdist(data.frame(otu_table(ps16S)),distance="jaccard")%>%as.matrix()
 
-distbrayB_samples=vegdist(otu_table(ps16S_samples), distance="bray")
-distbrayF_samples=vegdist(otu_table(psITS_samples), distance="bray")
+distbrayF=vegdist(data.frame(otu_table(psITS)), distance="bray")%>%as.matrix()
+distjaccardF = vegdist(data.frame(otu_table(psITS)),distance="jaccard")%>%as.matrix()
+
+distbrayB_samples=vegdist(data.frame(otu_table(ps16S_samples)), distance="bray")%>%as.matrix()
+distbrayF_samples=vegdist(data.frame(otu_table(psITS_samples)), distance="bray")%>%as.matrix()
+
+distbrayB_controls=vegdist(data.frame(otu_table(ps16S_controls)), distance="bray")%>%as.matrix()
+distbrayF_controls=vegdist(data.frame(otu_table(psITS_controls)), distance="bray")%>%as.matrix()
 ```
 
 
@@ -64,42 +84,118 @@ distbrayF_samples=vegdist(otu_table(psITS_samples), distance="bray")
 To assess distance-decay relationship (i.e. does dissimilarity between microbial communities increase with increasing geographic distance), we want to plot Bray-Curtis distance vs. geographic distance and fit a trendline.
 
 ```{r,echo=FALSE}
-#Bacteria
-data.frame(Bray=as.vector(distbrayB[upper.tri(distbrayB)]),
-          Geo=as.vector(distgeoB[upper.tri(distgeoB)])) %>%ggplot(aes(x=Geo,y=Bray))+geom_point()+geom_smooth(data=subset(dat,Geo<1000),method="lm")+geom_smooth(data=subset(dat, Geo>1000), method = "lm")+theme_minimal()+theme(panel.grid.major.x=element_blank())
+#Bacteria - diversification
+distB_samples <- data.frame(Bray=as.vector(distbrayB_samples[upper.tri(distbrayB_samples)]), Geo=as.vector(distgeoB_samples[upper.tri(distgeoB_samples)]),Group="Diversification") 
+distB_samples %>% ggplot(aes(x=Geo,y=Bray))+geom_point()+geom_smooth(method="lm")+theme_minimal()+theme(panel.grid=element_blank())+labs(x="Geographic distance (m)",y="Bray-Curtis distance",title="Bacteria")+theme(plot.title=element_text(hjust=0.5))
 
-#Fungi
-data.frame(Bray=as.vector(distbrayF[upper.tri(distbrayF)]),
-          Geo=as.vector(distgeoF[upper.tri(distgeoF)])) %>%ggplot(aes(x=Geo,y=Bray))+geom_point()+geom_smooth(data=subset(dat,Geo<1000),method="lm")+geom_smooth(data=subset(dat, Geo>1000), method = "lm")+theme_minimal()+theme(panel.grid.major.x=element_blank())
+#Fungi - diversification
+distF_samples <- data.frame(Bray=as.vector(distbrayF_samples[upper.tri(distbrayF_samples)]), Geo=as.vector(distgeoF_samples[upper.tri(distgeoF_samples)]),Group="Diversification") 
+distF_samples %>% ggplot(aes(x=Geo,y=Bray))+geom_point()+geom_smooth(method="lm")+theme_minimal()+theme(panel.grid=element_blank())+labs(x="Geographic distance (m)",y="Bray-Curtis distance",title="Fungi")+theme(plot.title=element_text(hjust=0.5))
 
 
-# Look only at samples - bacteria
-distB <- data.frame(Bray=as.vector(distbrayB_samples[upper.tri(distbrayB_samples)]), Geo=as.vector(distgeoB_samples[upper.tri(distgeoB_samples)])) 
-distB %>% ggplot(aes(x=Geo,y=Bray))+geom_point()+geom_smooth(method="lm")+theme_minimal()+theme(panel.grid=element_blank())+labs(x="Geographic distance (m)",y="Bray-Curtis distance",title="Bacteria")+theme(plot.title=element_text(hjust=0.5))
+# Separate trendlines for diversification and monoculture
+distB_controls <- data.frame(Bray=as.vector(distbrayB_controls[upper.tri(distbrayB_controls)]), Geo=as.vector(distgeoB_controls[upper.tri(distgeoB_controls)]),Group="Monoculture")
+distB_all = rbind(distB_samples,distB_controls)
+distB_all %>% ggplot(aes(x=Geo,y=Bray))+geom_point(aes(color=Group),alpha=0.2)+geom_smooth(aes(group=Group,color=Group),method="lm",alpha=0.2)+theme_minimal()+theme(panel.grid=element_blank())+labs(x="Geographic distance (m)",y="Bray-Curtis distance",title="Bacteria")+theme(plot.title=element_text(hjust=0.5))+scale_color_brewer(palette="Set2")+theme(legend.position="bottom")
 
-#Fungi
-distF <- data.frame(Bray=as.vector(distbrayF_samples[upper.tri(distbrayF_samples)]), Geo=as.vector(distgeoF_samples[upper.tri(distgeoF_samples)])) 
-distF %>% ggplot(aes(x=Geo,y=Bray))+geom_point()+geom_smooth(method="lm")+theme_minimal()+theme(panel.grid=element_blank())+labs(x="Geographic distance (m)",y="Bray-Curtis distance",title="Fungi")+theme(plot.title=element_text(hjust=0.5))
+
+distF_controls <- data.frame(Bray=as.vector(distbrayF_controls[upper.tri(distbrayF_controls)]), Geo=as.vector(distgeoF_controls[upper.tri(distgeoF_controls)]),Group="Monoculture") 
+distF_all <- rbind(distF_samples,distF_controls)
+distF_all %>% ggplot(aes(x=Geo,y=Bray))+geom_point(aes(color=Group),alpha=0.2)+geom_smooth(aes(group=Group,color=Group),method="lm",alpha=0.2)+theme_minimal()+theme(panel.grid=element_blank())+labs(x="Geographic distance (m)",y="Bray-Curtis distance",title="Fungi")+theme(plot.title=element_text(hjust=0.5))+scale_color_brewer(palette="Set2")+theme(legend.position="bottom")
 ```
 
 # Correlations
 ```{r}
-cor(distB$Bray,distB$Geo,use="complete.obs") # -0.033
-cor(distF$Bray,distF$Geo,use="complete.obs") # -0.077
+cor(distB_all$Bray,distB_all$Geo,use="complete.obs") # 0.422
+cor(distF_all$Bray,distF_all$Geo,use="complete.obs") # 0.146
 ```
 
 # Regression equation
 ```{r}
-modB <- lm(Bray ~ Geo, data = distB)
-summary(modB)# slope -7.216e-05, not significant
+modB_samples <- lm(Bray ~ Geo, data = distB_samples)
+summary(modB_samples)# slope 2.248e-03,p<2e-16 ***
+modB_controls <- lm(Bray ~ Geo, data = distB_controls)
+summary(modB_controls)# slope 3.617e-04,p=1.34e-15 ***
 
-modF <- lm(Bray ~ Geo, data = distF)
-summary(modF) # slope -1.606e-04, significant (p<0.05)*
+modF_samples <- lm(Bray ~ Geo, data = distF_samples)
+summary(modF_samples) # slope 6.683e-04 int 6.846e-01, p<0.001
+modF_controls <- lm(Bray~Geo,data = distF_controls)
+summary(modF_controls)
 ```
 
-# Mantel test
+# Multiple matrix regression analysis (MMRR)
+Wang et al. (2013) proposed this as an alternative to Mantel tests, which are increasingly thought of as less suitable for genetic/geographic analyses.
 ```{r}
-mantel(distgeoB,distbrayB,permutations=999) # significant
+# define functions as per Wang et al.
+MMRR<-function(Y,X,nperm=999){
+	#compute regression coefficients and test statistics
+	nrowsY<-nrow(Y)
+	y<-unfold(Y)
+	if(is.null(names(X)))names(X)<-paste("X",1:length(X),sep="")
+        Xmats<-sapply(X,unfold)
+        fit<-lm(y~Xmats)
+	coeffs<-fit$coefficients
+	summ<-summary(fit)
+	r.squared<-summ$r.squared
+	tstat<-summ$coefficients[,"t value"]
+	Fstat<-summ$fstatistic[1]
+	tprob<-rep(1,length(tstat))
+	Fprob<-1
+
+	#perform permutations
+	for(i in 1:nperm){
+		rand<-sample(1:nrowsY)
+		Yperm<-Y[rand,rand]
+		yperm<-unfold(Yperm)
+		fit<-lm(yperm~Xmats)
+		summ<-summary(fit)
+                Fprob<-Fprob+as.numeric(summ$fstatistic[1]>=Fstat)
+                tprob<-tprob+as.numeric(abs(summ$coefficients[,"t value"])>=abs(tstat))
+	}
+
+	#return values
+	tp<-tprob/(nperm+1)
+	Fp<-Fprob/(nperm+1)
+	names(r.squared)<-"r.squared"
+	names(coeffs)<-c("Intercept",names(X))
+	names(tstat)<-paste(c("Intercept",names(X)),"(t)",sep="")
+	names(tp)<-paste(c("Intercept",names(X)),"(p)",sep="")
+	names(Fstat)<-"F-statistic"
+	names(Fp)<-"F p-value"
+	return(list(r.squared=r.squared,
+		coefficients=coeffs,
+		tstatistic=tstat,
+		tpvalue=tp,
+		Fstatistic=Fstat,
+		Fpvalue=Fp))
+}
+
+# unfold converts the lower diagonal elements of a matrix into a vector
+# unfold is called by MMRR
+
+unfold<-function(X){
+	x<-vector()
+	for(i in 2:nrow(X)) x<-c(x,X[i,1:i-1])
+	x<-scale(x, center=TRUE, scale=TRUE)  # Comment this line out if you wish to perform the analysis without standardizing the distance matrices! 
+	return(x)
+}
+
+# Bacteria
+#Make a list of the explanatory (X) matrices
+XmatsB <- list(geography=distgeoB_samples)#add soil data when received
+distgeoB_samples <- as.matrix(distgeoB_samples)
+# Run MMRR function using genetic distance as the response variable and Xmats as the explanatory variables.
+# nperm does not need to be specified, default is nperm=999)
+MMRR(distbrayB_samples,XmatsB,nperm=999) # p<0.01
+
+XmatsB <- list(geography=distgeoB_controls)
+MMRR(distbrayB_controls,XmatsB,nperm=999) # p>0.05
+
+# Fungi
+XmatsF <- list(geography=distgeoF_samples)
+MMRR(distbrayF_samples,XmatsF,nperm=999) # NS
+XmatsF <- list(geography=distgeoF_controls)
+MMRR(distbrayF_controls,XmatsF,nperm=999) # NS
 ```
 
 
@@ -132,18 +228,105 @@ evalsF <- out.pcoa.logF$values[,1]
 
 # Effect of shade trees
 ```{r}
-ps16Slog_samples <- transform_sample_counts(ps16S_samples, function(x) log(1 + x))
+# only use samples where shade tree coordinates are known and shade tree is within 7 m (generous - reduces to 24 samples)
+head(sample_data(ps16S_samples))
+ps16S_shade <- subset_samples(ps16S_samples,complete.cases(Shade_Latitude)&Dist_shade<7)
+
+ps16Slog_samples <- transform_sample_counts(ps16S_shade, function(x) log(1 + x))
 out.pcoa.logB_samples <- ordinate(ps16Slog_samples,  method = "PCoA", distance = "bray")
 evalsB_samples <- out.pcoa.logB_samples$values[,1]
-(shade16S <- plot_ordination(ps16Slog_samples, out.pcoa.logB_samples, color = "Shade_species") +
+(shade16S <- plot_ordination(ps16Slog_samples, out.pcoa.logB_samples, color = "Shade_species.y") +
   labs(col = "Nearest Shade Species")+ theme_bw()+
   coord_fixed(sqrt(evalsB_samples[2] / evalsB_samples[1]))+
   theme(text=element_text(size=14),axis.title=element_text(size=14),legend.title=element_text(size=14))+
   scale_color_brewer(palette="BrBG")+
-  theme(panel.grid=element_blank())+theme(plot.margin=margin(1,1,1,1)))
+  theme(panel.grid=element_blank())+theme(plot.margin=margin(1,1,1,1))+ggtitle("Bacteria")+theme(legend.position = "bottom")+theme(plot.title = element_text(hjust=0.5))+guides(col=guide_legend(ncol=2)))
 
+#Would analyze with ANOSIM, which is robust to unequal group sizes unlike PERMANOVA, but we don't have enough members of each group
+#anosim(data.frame(otu_table(ps16S_shade)), sample_data(ps16S_shade)$Shade_species.y, permutations = 999, distance = "bray", strata = NULL) # p<0.05 for both bray and jaccard
+ 
+# Fungi
+psITSlog_samples <- transform_sample_counts(psITS_samples, function(x) log(1 + x))
+out.pcoa.logF_samples <- ordinate(psITSlog_samples,  method = "PCoA", distance = "jaccard")
+evalsF_samples <- out.pcoa.logF_samples$values[,1]
+(shadeITS <- plot_ordination(psITSlog_samples, out.pcoa.logF_samples, color = "Shade_species") +
+  labs(col = "Nearest Shade Species")+ theme_bw()+
+  coord_fixed(sqrt(evalsF_samples[2] / evalsF_samples[1]))+
+  theme(text=element_text(size=14),axis.title=element_text(size=14),legend.title=element_text(size=14))+
+  scale_color_brewer(palette="BrBG")+
+  theme(panel.grid=element_blank())+theme(plot.margin=margin(1,1,1,1))+ggtitle("Fungi")+theme(legend.position = "bottom")+theme(plot.title = element_text(hjust=0.5))+guides(col=guide_legend(ncol=2)))
+
+#ANOSIM - robust to unequal group sizes, unlike permanova
+anosim(data.frame(otu_table(psITS_samples)), sample_data(psITS_samples)$Shade_species, permutations = 999, distance = "bray", strata = NULL) # NS for both
 ```
 
 
+# Overall alpha diversity
+```{r}
+library(microbiomeutilities)
+#richness
+sample_data(psITS)$Richness <- specnumber(otu_table(psITS),MARGIN=1) # 1=rows, 2=col; samples are rows
+# shannon index
+sample_data(psITS)$Shannon <- vegan::diversity(otu_table(psITS), "shannon")
+sample_data(psITS)$Pielou <- (sample_data(psITS)$Shannon/log(sample_data(psITS)$Richness))
+
+
+div <- data.frame(sample_data(psITS)) %>% select("ID","Group","Richness","Shannon","Pielou") %>%
+  rename("Shannon Index" = "Shannon","Pielou Index" = "Pielou") %>% pivot_longer(cols=c("Richness","Shannon Index","Pielou Index"),names_to="div")
+
+(divITS <- ggplot(div,aes(x=Group,y=value))+
+  geom_point(aes(col=Group))+theme_bw()+
+  facet_wrap(~div,scales="free")+
+  scale_color_brewer(palette="Set2")+
+  theme(panel.grid=element_blank())+
+  theme(text=element_text(size=14))+
+  theme(axis.text.x=element_blank(),axis.title.x=element_blank(),axis.ticks.x=element_blank())+
+  theme(axis.title.y=element_blank())+theme(legend.position="bottom"))
+
+
+# Bacteria
+#richness
+sample_data(ps16S)$Richness <- specnumber(otu_table(ps16S),MARGIN=1)
+# shannon index
+sample_data(ps16S)$Shannon <- vegan::diversity(otu_table(ps16S), "shannon")
+sample_data(ps16S)$Pielou <- (sample_data(ps16S)$Shannon/log(sample_data(ps16S)$Richness))
+
+
+div <- data.frame(sample_data(ps16S)) %>% select("ID","Group","Richness","Shannon","Pielou") %>%
+  rename("Shannon Index" = "Shannon","Pielou Index" = "Pielou") %>% pivot_longer(cols=c("Richness","Shannon Index","Pielou Index"),names_to="div")
+
+(div16S <- ggplot(div,aes(x=Group,y=value))+
+  geom_point(aes(col=Group))+theme_bw()+
+  facet_wrap(~div,scales="free")+
+  scale_color_brewer(palette="Set2")+
+  theme(panel.grid=element_blank())+
+  theme(text=element_text(size=14))+
+  theme(axis.text.x=element_blank(),axis.title.x=element_blank(),axis.ticks.x=element_blank())+
+  theme(axis.title.y=element_blank())+theme(legend.position="bottom"))
+```
+
+# Overall compositions: Diversification vs. Monoculture Plots
+```{r}
+library(microViz)
+(comp16S <- ps16S %>%phyloseq::merge_samples(group = "Group")%>% tax_fix %>%
+  comp_barplot(
+    tax_level = "Phylum", n_taxa = 12,
+    bar_outline_colour = "grey5",
+    merge_other = FALSE,
+    sample_order = "bray", 
+    tax_order = sum,
+      bar_width = 0.7) + coord_flip() +
+    theme(legend.position="bottom")+theme(axis.text=element_text(size=10),axis.title=element_text(size=10),strip.text=element_text(size=10),legend.text=element_text(size=10))+ guides(fill=guide_legend(ncol=3))+ theme(legend.title = element_blank())+theme(plot.margin = margin(0, 0.6, 0, 0.5, "cm")))
+
+(compITS <- psITS %>%phyloseq::merge_samples(group = "Group")%>% tax_fix %>%
+  comp_barplot(
+    tax_level = "Phylum", n_taxa = 12,
+    bar_outline_colour = "grey5",
+    merge_other = FALSE,
+    sample_order = "bray", 
+    tax_order = sum,
+      bar_width = 0.7) + coord_flip() +
+    theme(legend.position="bottom")+theme(axis.text=element_text(size=10),axis.title=element_text(size=10),strip.text=element_text(size=10),legend.text=element_text(size=10))+ guides(fill=guide_legend(ncol=3))+ theme(legend.title = element_blank())+theme(plot.margin = margin(0, 0.5, 0, 0.5, "cm")))
+```
 
 
