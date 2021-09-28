@@ -13,35 +13,45 @@ library(phyloseq)
 library(tidyverse)
 library(vegan)
 library(ggplot2)
+library(ggpubr)
+library(factoextra)
 ps16S <- readRDS("tarengge16S.rds")
 psITS <- readRDS("tarenggeITS.rds")
 shade <- read.csv("data/shade_trees.csv")
-
-head(sample_data(psITS))
-
+soil <- read.csv("data/Soil_results_diversification.csv")
 
 controls <- str_subset(sample_data(ps16S)$Local.Label.y,"Control")
 
-ps16S_samples <- subset_samples(ps16S,Group=="Diversification")
-psITS_samples <- subset_samples(psITS,Group=="Diversification")
+sample_data(ps16S)$Group <- ifelse((sample_data(ps16S)$Shade_species=="None"&sample_data(ps16S)$Group=="Diversification"),"Diversification Control", paste(sample_data(ps16S)$Group)) # recode so we can separate out soil properties by shade tree presence
+sample_data(ps16S)$Group <- factor(sample_data(ps16S)$Group,levels=c("Diversification","Monoculture","Diversification Control"))
 
+sample_data(psITS)$Group <- ifelse((sample_data(psITS)$Shade_species=="None"&sample_data(psITS)$Group=="Diversification"),"Diversification Control", paste(sample_data(psITS)$Group)) # recode so we can separate out soil properties by shade tree presence
+sample_data(psITS)$Group <- factor(sample_data(psITS)$Group,levels=c("Diversification","Monoculture","Diversification Control"))
+sample_data(psITS)
+
+# Divide samples into categories for visualization
+ps16S_samples <- subset_samples(ps16S,Group=="Diversification")
+ps16S_divcontrols <- subset_samples(ps16S,Group=="Diversification Control")
 ps16S_controls <- subset_samples(ps16S,Group=="Monoculture")
+
+psITS_samples <- subset_samples(psITS,Group=="Diversification")
+psITS_divcontrols <- subset_samples(psITS,Group=="Diversification Control")
 psITS_controls <- subset_samples(psITS,Group=="Monoculture")
 ```
 
 ## Calculate distance matrix for distance between sampling locations
 Distance is in meters - see geodist vignettes.
 ```{r }
-site_coordsB <- sample_data(ps16S) %>% data.frame() %>% select(Longitude,Latitude) 
-distgeoB <- geodist(site_coordsB,measure="geodesic") # geodesic distance
+site_coordsB <- sample_data(ps16S) %>% data.frame() %>% select(Longitude,Latitude,Group) 
+distgeoB <- geodist(site_coordsB[,c(1:2)],measure="geodesic") # geodesic distance
 max(distgeoB,na.rm=T) # max distance ~115m 
 hist(distgeoB)
 
-distgeoB_samples <- geodist(site_coordsB[21:88,],measure="geodesic")
+distgeoB_samples <- subset(site_coordsB,Group=="Diversification") %>% geodist(measure="geodesic")
 hist(distgeoB_samples)
 max(distgeoB_samples,na.rm=T) # only 86m within samples
-distgeoB_controls <- geodist(site_coordsB[1:20,],measure="geodesic")
-hist(distgeoB_controls) # 80 m
+distgeoB_divcontrols <- subset(site_coordsB,Group=="Diversification Control") %>% geodist(measure="geodesic")
+distgeoB_controls <- subset(site_coordsB,Group=="Monoculture") %>% geodist(measure="geodesic")
 
 # distance to shade tree - only makes sense to include distances <5m if we assume litterfall, fine roots, etc. only impact the area directly around the tree
 sample_data(ps16S)$Dist_shade <- geodist(data.frame(Longitude=sample_data(ps16S)$Longitude,Latitude=sample_data(ps16S)$Latitude),data.frame(Longitude=sample_data(ps16S)$Shade_Longitude,Latitude=sample_data(ps16S)$Shade_Latitude),paired=TRUE,measure="geodesic")
@@ -50,15 +60,18 @@ hist(sample_data(ps16S)$Dist_shade)
 
 
 # Fungi
-site_coordsF <- sample_data(psITS) %>% data.frame() %>% rownames_to_column("rownames") %>% select(rownames,Longitude,Latitude) %>%arrange(rownames)%>%column_to_rownames("rownames") # need to arrange by sample name to have controls at the top
+site_coordsF <- sample_data(psITS) %>% data.frame() %>% rownames_to_column("rownames") %>% select(rownames,Longitude,Latitude,Group) %>% column_to_rownames("rownames")  
+
 distgeoF <- geodist(site_coordsF,measure="geodesic") # geodesic distance
 max(distgeoF,na.rm=T) # checking that it's the same
-distgeoF_samples <- geodist(site_coordsF[21:99,],measure="geodesic")
-hist(distgeoF_samples)
-max(distgeoF_samples,na.rm=T) # 86m within samples
 
-distgeoF_controls <- geodist(site_coordsF[1:20,],measure="geodesic")
-hist(distgeoF_controls)
+distgeoF_samples <- subset(site_coordsF,Group=="Diversification") %>% geodist(measure="geodesic")
+hist(distgeoF_samples)
+max(distgeoF_samples,na.rm=T) # 83.5m within samples
+
+distgeoF_divcontrols <- subset(site_coordsF,Group=="Diversification Control") %>% geodist(measure="geodesic")
+
+distgeoF_controls <- subset(site_coordsF,Group=="Monoculture") %>% geodist(measure="geodesic")
 
 sample_data(psITS)$Dist_shade <- geodist(data.frame(Longitude=sample_data(psITS)$Longitude,Latitude=sample_data(psITS)$Latitude),data.frame(Longitude=sample_data(psITS)$Shade_Longitude,Latitude=sample_data(psITS)$Shade_Latitude),paired=TRUE,measure="geodesic")
 hist(sample_data(psITS)$Dist_shade)
@@ -66,14 +79,11 @@ hist(sample_data(psITS)$Dist_shade)
 
 ## Bray-Curtis dissimilarity matrices
 ```{r}
-distbrayB=vegdist(data.frame(otu_table(ps16S)), distance="bray")%>%as.matrix()
-distjaccardB = vegdist(data.frame(otu_table(ps16S)),distance="jaccard")%>%as.matrix()
-
-distbrayF=vegdist(data.frame(otu_table(psITS)), distance="bray")%>%as.matrix()
-distjaccardF = vegdist(data.frame(otu_table(psITS)),distance="jaccard")%>%as.matrix()
-
 distbrayB_samples=vegdist(data.frame(otu_table(ps16S_samples)), distance="bray")%>%as.matrix()
 distbrayF_samples=vegdist(data.frame(otu_table(psITS_samples)), distance="bray")%>%as.matrix()
+
+distbrayB_divcontrols=vegdist(data.frame(otu_table(ps16S_divcontrols)),distance="bray")%>%as.matrix()
+distbrayF_divcontrols=vegdist(data.frame(otu_table(psITS_divcontrols)),distance="bray")%>%as.matrix()
 
 distbrayB_controls=vegdist(data.frame(otu_table(ps16S_controls)), distance="bray")%>%as.matrix()
 distbrayF_controls=vegdist(data.frame(otu_table(psITS_controls)), distance="bray")%>%as.matrix()
@@ -81,44 +91,51 @@ distbrayF_controls=vegdist(data.frame(otu_table(psITS_controls)), distance="bray
 
 
 ## Bray-Curtis dissimilarity vs. distance
-To assess distance-decay relationship (i.e. does dissimilarity between microbial communities increase with increasing geographic distance), we want to plot Bray-Curtis distance vs. geographic distance and fit a trendline.
+To assess distance-decay relationships (i.e. does dissimilarity between microbial communities increase with increasing geographic distance), we want to plot Bray-Curtis distance vs. geographic distance and fit trendlines. Because we are interested in how the presence of shade trees affects these relationships, we plot the three sample groups separately and fit separate trendlines.
 
 ```{r,echo=FALSE}
-#Bacteria - diversification
-distB_samples <- data.frame(Bray=as.vector(distbrayB_samples[upper.tri(distbrayB_samples)]), Geo=as.vector(distgeoB_samples[upper.tri(distgeoB_samples)]),Group="Diversification") 
-distB_samples %>% ggplot(aes(x=Geo,y=Bray))+geom_point()+geom_smooth(method="lm")+theme_minimal()+theme(panel.grid=element_blank())+labs(x="Geographic distance (m)",y="Bray-Curtis distance",title="Bacteria")+theme(plot.title=element_text(hjust=0.5))
+distB_samples <- data.frame(Bray=as.vector(distbrayB_samples[upper.tri(distbrayB_samples)]), Geo=as.vector(distgeoB_samples[upper.tri(distgeoB_samples)]),Group="Diversification")
 
-#Fungi - diversification
-distF_samples <- data.frame(Bray=as.vector(distbrayF_samples[upper.tri(distbrayF_samples)]), Geo=as.vector(distgeoF_samples[upper.tri(distgeoF_samples)]),Group="Diversification") 
-distF_samples %>% ggplot(aes(x=Geo,y=Bray))+geom_point()+geom_smooth(method="lm")+theme_minimal()+theme(panel.grid=element_blank())+labs(x="Geographic distance (m)",y="Bray-Curtis distance",title="Fungi")+theme(plot.title=element_text(hjust=0.5))
+distB_divcontrols <- data.frame(Bray=as.vector(distbrayB_divcontrols[upper.tri(distbrayB_divcontrols)]), Geo=as.vector(distgeoB_divcontrols[upper.tri(distgeoB_divcontrols)]),Group="Diversification Control")
 
-
-# Separate trendlines for diversification and monoculture
 distB_controls <- data.frame(Bray=as.vector(distbrayB_controls[upper.tri(distbrayB_controls)]), Geo=as.vector(distgeoB_controls[upper.tri(distgeoB_controls)]),Group="Monoculture")
-distB_all = rbind(distB_samples,distB_controls)
+distB_all = rbind(distB_samples,distB_divcontrols,distB_controls)
+distB_all$Group <- factor(distB_all$Group,levels=c("Diversification","Monoculture","Diversification Control"))
+
 distB_all %>% ggplot(aes(x=Geo,y=Bray))+geom_point(aes(color=Group),alpha=0.2)+geom_smooth(aes(group=Group,color=Group),method="lm",alpha=0.2)+theme_minimal()+theme(panel.grid=element_blank())+labs(x="Geographic distance (m)",y="Bray-Curtis distance",title="Bacteria")+theme(plot.title=element_text(hjust=0.5))+scale_color_brewer(palette="Set2")+theme(legend.position="bottom")
 
 
-distF_controls <- data.frame(Bray=as.vector(distbrayF_controls[upper.tri(distbrayF_controls)]), Geo=as.vector(distgeoF_controls[upper.tri(distgeoF_controls)]),Group="Monoculture") 
-distF_all <- rbind(distF_samples,distF_controls)
+distF_samples <- data.frame(Bray=as.vector(distbrayF_samples[upper.tri(distbrayF_samples)]), Geo=as.vector(distgeoF_samples[upper.tri(distgeoF_samples)]),Group="Diversification") 
+
+distF_divcontrols <- data.frame(Bray=as.vector(distbrayF_divcontrols[upper.tri(distbrayF_divcontrols)]), Geo=as.vector(distgeoF_divcontrols[upper.tri(distgeoF_divcontrols)]),Group="Diversification Control") 
+
+distF_controls <- data.frame(Bray=as.vector(distbrayF_controls[upper.tri(distbrayF_controls)]), Geo=as.vector(distgeoF_controls[upper.tri(distgeoF_controls)]),Group="Monoculture")
+
+distF_all <- rbind(distF_samples,distF_divcontrols,distF_controls)
+distF_all$Group <- factor(distF_all$Group,levels=c("Diversification","Monoculture","Diversification Control"))
+
 distF_all %>% ggplot(aes(x=Geo,y=Bray))+geom_point(aes(color=Group),alpha=0.2)+geom_smooth(aes(group=Group,color=Group),method="lm",alpha=0.2)+theme_minimal()+theme(panel.grid=element_blank())+labs(x="Geographic distance (m)",y="Bray-Curtis distance",title="Fungi")+theme(plot.title=element_text(hjust=0.5))+scale_color_brewer(palette="Set2")+theme(legend.position="bottom")
 ```
 
 # Correlations
 ```{r}
-cor(distB_all$Bray,distB_all$Geo,use="complete.obs") # 0.422
-cor(distF_all$Bray,distF_all$Geo,use="complete.obs") # 0.146
+cor(distB_all$Bray,distB_all$Geo,use="complete.obs") # 0.412
+cor(distF_all$Bray,distF_all$Geo,use="complete.obs") # 0.334
 ```
 
 # Regression equation
 ```{r}
 modB_samples <- lm(Bray ~ Geo, data = distB_samples)
-summary(modB_samples)# slope 2.248e-03,p<2e-16 ***
+summary(modB_samples)# slope 0.00249,int=0.6,both p<2e-16 ***
+modB_divcontrols <- lm(Bray ~ Geo, data = distB_divcontrols)
+summary(modB_divcontrols)# slope 0.00132,int=0.685,both p<0.001 ***
 modB_controls <- lm(Bray ~ Geo, data = distB_controls)
-summary(modB_controls)# slope 3.617e-04,p=1.34e-15 ***
+summary(modB_controls)# slope NS, int 0.588
 
 modF_samples <- lm(Bray ~ Geo, data = distF_samples)
-summary(modF_samples) # slope 6.683e-04 int 6.846e-01, p<0.001
+summary(modF_samples) # slope 0.0017 int .640, p<0.001
+modF_divcontrols <- lm(Bray ~ Geo, data = distF_divcontrols)
+summary(modF_divcontrols) # slope 0.00157 int .676, p<0.001
 modF_controls <- lm(Bray~Geo,data = distF_controls)
 summary(modF_controls)
 ```
@@ -186,82 +203,94 @@ XmatsB <- list(geography=distgeoB_samples)#add soil data when received
 distgeoB_samples <- as.matrix(distgeoB_samples)
 # Run MMRR function using genetic distance as the response variable and Xmats as the explanatory variables.
 # nperm does not need to be specified, default is nperm=999)
-MMRR(distbrayB_samples,XmatsB,nperm=999) # p<0.01
+MMRR(distbrayB_samples,XmatsB,nperm=999) # p<0.001***, r2=0.254
+
+#redefine for div controls
+XmatsB <- list(geography=distgeoB_divcontrols)
+MMRR(distbrayB_divcontrols,XmatsB,nperm=999) # p=0.003, r2=0.084
 
 XmatsB <- list(geography=distgeoB_controls)
-MMRR(distbrayB_controls,XmatsB,nperm=999) # p>0.05
+MMRR(distbrayB_controls,XmatsB,nperm=999) # p=0.537, r2=0.005
 
 # Fungi
 XmatsF <- list(geography=distgeoF_samples)
-MMRR(distbrayF_samples,XmatsF,nperm=999) # NS
+MMRR(distbrayF_samples,XmatsF,nperm=999) # r2=0.108,p=0.001
+
+XmatsF <- list(geography=distgeoF_divcontrols)
+MMRR(distbrayF_divcontrols,XmatsF,nperm=999) # r2=0.247,p<0.001
+
 XmatsF <- list(geography=distgeoF_controls)
-MMRR(distbrayF_controls,XmatsF,nperm=999) # NS
+MMRR(distbrayF_controls,XmatsF,nperm=999) # NS (p=0.174),r2=0.029
 ```
 
 
 # PCoA ordination of microbial communities
 ```{r}
 # PCoA based on Bray-Curtis dissimilarity
+
 ps16Slog <- transform_sample_counts(ps16S, function(x) log(1 + x))
 out.pcoa.logB <- ordinate(ps16Slog,  method = "PCoA", distance = "bray")
 evalsB <- out.pcoa.logB$values[,1]
 
 (comp16S <- plot_ordination(ps16Slog, out.pcoa.logB, color = "Group") +
-  labs(col = "Trial")+ theme_bw()+
+  labs(col = "Group")+ theme_bw()+
   coord_fixed(sqrt(evalsB[2] / evalsB[1]))+
-  theme(text=element_text(size=14),axis.title=element_text(size=14),legend.title=element_text(size=14),plot.title=element_text(hjust=0.5))+
+  theme(text=element_text(size=14),axis.title=element_text(size=12),legend.title=element_blank(),plot.title=element_text(hjust=0.5,size=14))+
   scale_color_brewer(palette="Set2")+
   theme(panel.grid=element_blank())+theme(legend.position="bottom")+theme(plot.margin=margin(1,1,1,1))+ggtitle("Bacteria"))
 
 # Fungi
+
 psITSlog <- transform_sample_counts(psITS, function(x) log(1 + x))
 out.pcoa.logF <- ordinate(psITSlog,  method = "PCoA", distance = "bray")
 evalsF <- out.pcoa.logF$values[,1]
 
 (compITS <- plot_ordination(psITSlog, out.pcoa.logF, color = "Group") +
-  labs(col = "Trial")+ theme_bw()+
+  labs(col = "Group")+ theme_bw()+
   coord_fixed(sqrt(evalsF[2] / evalsF[1]))+
-  theme(text=element_text(size=14),axis.title=element_text(size=14),legend.title=element_text(size=14),plot.title=element_text(hjust=0.5))+
+  theme(text=element_text(size=14),axis.title=element_text(size=12),legend.title=element_blank(),plot.title=element_text(hjust=0.5,size=14))+
   scale_color_brewer(palette="Set2")+
   theme(panel.grid=element_blank())+theme(legend.position="bottom")+theme(plot.margin=margin(1,1,1,1))+ggtitle("Fungi"))
 ```
 
 # Effect of shade trees
 ```{r}
-# only use samples where shade tree coordinates are known and shade tree is within 7 m (generous - reduces to 24 samples)
+# shade trees are only listed for cacao trees that were immediately adjacent to a shade tree, otherwise listed as "none"
+# these trees serve as a better control than the monoculture since they're within the same plot = same soil
+# can't calculate distance to nearest shade tree because GPS is only accurate to ~3m and we don't know coordinates for all shade trees
 head(sample_data(ps16S_samples))
-ps16S_shade <- subset_samples(ps16S_samples,complete.cases(Shade_Latitude)&Dist_shade<7)
-
-ps16Slog_samples <- transform_sample_counts(ps16S_shade, function(x) log(1 + x))
+ps16Sdiv <- subset_samples(ps16S,Group!="Monoculture")
+ps16Slog_samples <- transform_sample_counts(ps16Sdiv, function(x) log(1 + x))
 out.pcoa.logB_samples <- ordinate(ps16Slog_samples,  method = "PCoA", distance = "bray")
 evalsB_samples <- out.pcoa.logB_samples$values[,1]
-(shade16S <- plot_ordination(ps16Slog_samples, out.pcoa.logB_samples, color = "Shade_species.y") +
+(shade16S <- plot_ordination(ps16Slog_samples, out.pcoa.logB_samples, color = "Shade_species") +
   labs(col = "Nearest Shade Species")+ theme_bw()+
   coord_fixed(sqrt(evalsB_samples[2] / evalsB_samples[1]))+
   theme(text=element_text(size=14),axis.title=element_text(size=14),legend.title=element_text(size=14))+
   scale_color_brewer(palette="BrBG")+
   theme(panel.grid=element_blank())+theme(plot.margin=margin(1,1,1,1))+ggtitle("Bacteria")+theme(legend.position = "bottom")+theme(plot.title = element_text(hjust=0.5))+guides(col=guide_legend(ncol=2)))
 
-#Would analyze with ANOSIM, which is robust to unequal group sizes unlike PERMANOVA, but we don't have enough members of each group
-#anosim(data.frame(otu_table(ps16S_shade)), sample_data(ps16S_shade)$Shade_species.y, permutations = 999, distance = "bray", strata = NULL) # p<0.05 for both bray and jaccard
+#ANOSIM is robust to unequal group sizes unlike PERMANOVA
+anosim(data.frame(otu_table(ps16S_samples)), sample_data(ps16S_samples)$Shade_species, permutations = 999, distance = "jaccard", strata = NULL) # bray p = 0.537, jaccard 0.536
  
 # Fungi
-psITSlog_samples <- transform_sample_counts(psITS_samples, function(x) log(1 + x))
-out.pcoa.logF_samples <- ordinate(psITSlog_samples,  method = "PCoA", distance = "jaccard")
+psITSdiv <- subset_samples(psITS,Group!="Monoculture")
+psITSlog_samples <- transform_sample_counts(psITSdiv, function(x) log(1 + x))
+out.pcoa.logF_samples <- ordinate(psITSlog_samples,  method = "PCoA", distance = "bray")
 evalsF_samples <- out.pcoa.logF_samples$values[,1]
 (shadeITS <- plot_ordination(psITSlog_samples, out.pcoa.logF_samples, color = "Shade_species") +
   labs(col = "Nearest Shade Species")+ theme_bw()+
   coord_fixed(sqrt(evalsF_samples[2] / evalsF_samples[1]))+
   theme(text=element_text(size=14),axis.title=element_text(size=14),legend.title=element_text(size=14))+
   scale_color_brewer(palette="BrBG")+
-  theme(panel.grid=element_blank())+theme(plot.margin=margin(1,1,1,1))+ggtitle("Fungi")+theme(legend.position = "bottom")+theme(plot.title = element_text(hjust=0.5))+guides(col=guide_legend(ncol=2)))
+  theme(panel.grid=element_blank())+theme(plot.margin=margin(1,1,1,1))+ggtitle("Fungi")+theme(legend.position = "bottom")+theme(plot.title = element_text(hjust=0.5),legend.title=element_blank())+guides(col=guide_legend(ncol=3)))
 
-#ANOSIM - robust to unequal group sizes, unlike permanova
+#ANOSIM 
 anosim(data.frame(otu_table(psITS_samples)), sample_data(psITS_samples)$Shade_species, permutations = 999, distance = "bray", strata = NULL) # NS for both
 ```
 
 
-# Overall alpha diversity
+# Comparison of alpha diversity
 ```{r}
 library(microbiomeutilities)
 #richness
@@ -274,12 +303,13 @@ sample_data(psITS)$Pielou <- (sample_data(psITS)$Shannon/log(sample_data(psITS)$
 div <- data.frame(sample_data(psITS)) %>% select("ID","Group","Richness","Shannon","Pielou") %>%
   rename("Shannon Index" = "Shannon","Pielou Index" = "Pielou") %>% pivot_longer(cols=c("Richness","Shannon Index","Pielou Index"),names_to="div")
 
+
 (divITS <- ggplot(div,aes(x=Group,y=value))+
   geom_point(aes(col=Group))+theme_bw()+
   facet_wrap(~div,scales="free")+
   scale_color_brewer(palette="Set2")+
   theme(panel.grid=element_blank())+
-  theme(text=element_text(size=14))+
+  theme(text=element_text(size=14))+stat_compare_means(comparisons=list(c("Monoculture","Diversification"),c("Diversification","Diversification Control")),label="p.signif")+
   theme(axis.text.x=element_blank(),axis.title.x=element_blank(),axis.ticks.x=element_blank())+
   theme(axis.title.y=element_blank())+theme(legend.position="bottom"))
 
@@ -301,8 +331,7 @@ div <- data.frame(sample_data(ps16S)) %>% select("ID","Group","Richness","Shanno
   scale_color_brewer(palette="Set2")+
   theme(panel.grid=element_blank())+
   theme(text=element_text(size=14))+
-  theme(axis.text.x=element_blank(),axis.title.x=element_blank(),axis.ticks.x=element_blank())+
-  theme(axis.title.y=element_blank())+theme(legend.position="bottom"))
+  theme(axis.text.x=element_blank(),axis.title.x=element_blank(),axis.ticks.x=element_blank())+stat_compare_means(comparisons=list(c("Monoculture","Diversification"),c("Diversification","Diversification Control")),label="p.signif")+theme(axis.title.y=element_blank())+theme(legend.position="bottom"))
 ```
 
 # Overall compositions: Diversification vs. Monoculture Plots
@@ -329,4 +358,447 @@ library(microViz)
     theme(legend.position="bottom")+theme(axis.text=element_text(size=10),axis.title=element_text(size=10),strip.text=element_text(size=10),legend.text=element_text(size=10))+ guides(fill=guide_legend(ncol=3))+ theme(legend.title = element_blank())+theme(plot.margin = margin(0, 0.5, 0, 0.5, "cm")))
 ```
 
+# Soil physicochemical parameters
+We know from the ANOSIM analysis that within a plot, presence of shade trees doesn't have a direct effect. However, given the differences between plots, we want to ask which soil properties might be most influential on soil microbial community composition.
+
+First, visualize differences among plots.
+
+# PCA
+```{r}
+head(soil)
+soil <- soil %>% select(-Rownames,-Group)
+datF <- data.frame(sample_data(psITS))
+fullsoil <- left_join(datF[,c(7,10:24)],soil,by="Local.Label.y")%>% filter(complete.cases(.$Sand))%>%column_to_rownames("Local.Label.y") %>% select(-P_Olsen)
+# control plot didn't have P_Olsen measured so need to remove that to keep diversification and monoculture in PCA
+
+str(fullsoil)
+
+library(factoextra)
+
+fullsoil2 <- fullsoil[complete.cases(fullsoil[,16:37]),]
+groups <- as.factor(fullsoil2$Group)
+nut.pca <- prcomp(fullsoil2[,16:37],scale=TRUE)
+fviz_eig(nut.pca) # scree plot
+
+options(ggrepel.max.overlaps = Inf) 
+(pcaplot <- fviz_pca_biplot(nut.pca, geom_ind="point",
+                            label="var",
+                            repel = TRUE,
+                col.var = "#696969", # Variables color
+                col.ind = groups, # color by groups
+             palette = "Set2",# Individuals color
+             title=NULL,
+             ggtheme=theme_minimal())+ labs(col="Group",shape="Group")+scale_shape_manual(values=c(rep(19,8))))
+```
+
+
+# Properties that differ between plots
+```{r}
+library(ggpubr)
+# separate out only soil properties
+soilplot <- fullsoil[,c(4,16:37)]  
+soilplot <- subset(soilplot,soilplot$P_CitAcExt<500) # outlier
+
+# check correlations
+res <- as.matrix(cor(soilplot[,2:23], method = "kendall", use = "complete.obs"))
+library(corrplot)
+corrplot(res,type="upper")
+
+# need to remove highly correlated variables for model selection and plotting
+soilplot <- soilplot %>%
+  select(-CaO,-MgO,-K2O,-P2O5,-pH_KCl,-Total_Cations,-C_N) %>%
+  rename("Base saturation"="Base_sat", 
+         "% C" = "C_percent","% N" = "N_percent", 
+         "NO3-N"="NO3_N_mg","NH4-N"="NH4_N_mg", "P"="P_CitAcExt",
+         "pH"="pH_H2O",
+         "Silt"="Loam") %>% 
+  pivot_longer(cols=2:16,names_to="Parameter")
+#unique(soilplot$Parameter)
+soilplot$Parameter <- factor(soilplot$Parameter,levels=c("Sand","Silt","Clay","% C","% N","CEC","Base saturation","pH","Na","NO3-N","NH4-N","P","K","Ca","Mg"))
+
+soilplot$Group <- factor(soilplot$Group,levels=c("Diversification","Monoculture","Diversification Control"))
+
+
+soilplot%>% 
+  #filter(Group!="Monoculture") %>%
+  ggplot(aes(x=Group,y=value))+
+  geom_point(aes(col=Group))+theme_bw()+
+  facet_wrap(~Parameter,scales="free",ncol=3)+
+  scale_color_brewer(palette="Set2")+
+  theme(panel.grid=element_blank())+
+  theme(text=element_text(size=14))+
+  theme(axis.text.x=element_blank(),axis.title.x=element_blank(),axis.ticks.x=element_blank())+
+  theme(axis.title.y=element_blank())+
+  stat_compare_means(comparisons=list(c("Monoculture","Diversification"),c("Diversification","Diversification Control")),label="p.signif",vjust=0.5)+theme(legend.position="bottom")
+```
+
+# What soil texture is this?
+```{r}
+fullsoil3 %>% group_by(Group) %>% summarize(Sand=mean(Sand),Silt=mean(Loam),Clay=mean(Clay))
+```
+
+
+# Yield
+```{r}
+fullsoil %>% subset(.,complete.cases(fullsoil$Shade_species)) %>% ggplot(aes(x=Shade_species,y=Dry_beans_kg))+geom_point(aes(col=Shade_species))+stat_compare_means(hjust=0.1)+theme_bw()+theme(panel.grid=element_blank())+scale_color_brewer(palette="BrBG")+labs(x="Shade species",y="Yield (kg dry beans)")+theme(legend.position = "none")+theme(axis.text.x=element_text(angle=45,hjust=1))
+
+fullsoil %>% subset(.,complete.cases(fullsoil$Shade_species)) %>% ggplot(aes(x=Shade_species,y=Harvested_healthy))+geom_point(aes(col=Shade_species))+stat_compare_means(hjust=0.1)+theme_bw()+theme(panel.grid=element_blank())+scale_color_brewer(palette="BrBG")+labs(x="Shade species",y="Yield (healthy pods)")+theme(legend.position = "none")+theme(axis.text.x=element_text(angle=45,hjust=1))
+
+fullsoil %>%subset(.,complete.cases(fullsoil$Shade_species)) %>% ggplot(aes(x=Shade_species,y=Harvested_infected))+geom_point(aes(col=Shade_species))+stat_compare_means(hjust=0.1)+theme_bw()+theme(panel.grid=element_blank())+scale_color_brewer(palette="BrBG")+labs(x="Shade species",y="Yield (infected pods)")+theme(legend.position="none")+theme(axis.text.x=element_text(angle=45,hjust=1))
+```
+
+# Do any soil properties predict yield?
+```{r}
+library(caret)
+# Set seed for reproducibility
+set.seed(123)
+# Set up repeated k-fold cross-validation
+train.control <- trainControl(method = "cv", number = 10)
+
+# only works when response variable is present
+# again, remove highly correlated variables
+soilyield <- fullsoil[complete.cases(fullsoil$Dry_beans_kg),c(1:3,16:37)] %>% select(-CaO,-MgO,-K2O,-P2O5,-pH_KCl,-Total_Cations,-C_N)
+
+# Dry beans
+step.drybeans <- train(Dry_beans_kg ~., data = soilyield[,c(3,4:18)],
+                    method = "leapSeq", #stepwise
+                    tuneGrid = data.frame(nvmax = 1:14),
+                    trControl = train.control
+                    )
+ 
+#summary(step.drybeans$finalModel) finalModel changes
+
+plot(varImp(step.drybeans)) #  P_CitAcExt,No3,Sand,Na,K
+importance.dry <- varImp(step.drybeans)$importance %>%rename('Dry Beans'=Overall)
+importance <- data.frame(importance.dry)
+
+```
+
+```{r}
+step.healthy <- train(Harvested_healthy ~., data = soilyield[,c(1,4:18)],
+                    method = "leapSeq", #stepwise
+                    tuneGrid = data.frame(nvmax = 1:14),
+                    trControl = train.control
+                    )
+ 
+#summary(step.healthy$finalModel) 
+
+plot(varImp(step.healthy)) # No3,P_CitAcExt,Sand,Na
+importance.healthy <- varImp(step.healthy)$importance %>%rename(`Healthy Pods`=Overall)
+importance[,2] <- importance.healthy
+```
+
+```{r}
+step.infected <- train(Harvested_infected ~., data = soilyield[,c(2,4:18)],
+                    method = "leapSeq", #stepwise
+                    tuneGrid = data.frame(nvmax = 1:14),
+                    trControl = train.control
+                    )
+ 
+#summary(step.infected$finalModel) #P_CitAcExt
+
+plot(varImp(step.infected)) # P_CitAcExt, Loam, Mg
+importance.inf <- varImp(step.infected)$importance %>%rename('Infected Pods'=Overall)
+importance[,3] <- importance.inf
+```
+
+# Heatmap
+```{r}
+colnames(importance)
+importance <- importance %>% rename('Dry Beans'=Dry.Beans)
+importance2 <- arrange(importance,rownames(importance))
+mat <- t(importance2)
+library(gplots)
+tiff(filename='yield_varImp.tiff', width=180, height=100,units="mm",res=300)
+heatmap.2(x=mat,
+          dendrogram="none",
+          Rowv = NULL,
+          Colv=NULL,
+          cexRow=1,cexCol=1,
+          margins=c(9,9),
+          trace="none",key=FALSE)
+graphics.off()
+```
+
+
+```{r}
+hist(soilyield$Harvested_healthy)
+hist(soilyield$Harvested_infected)
+hist(soilyield$Dry_beans_kg)
+hist(soilyield$P_CitAcExt,breaks=c(0,10,20,40,100,1000))
+hist(soilyield$NO3_N_mg)
+```
+
+# Are there any correlations between soil nutrients and yield?
+Use Kendall correlation coefficient (rank-based non-parametric) instead of Pearson correlation coefficient (direct correlation, only good for normal distributions).
+```{r}
+# Healthy pods
+cor(soilyield[4:18], soilyield[3],method="kendall",use="complete.obs")
+# highest absolute values for dry beans: Sand, N_percent,Loam,K,Na, none significant
+# infected pods: NH4N p=0.049
+# healthy pods: N_percent, but not significant
+cor.test(soilyield$Harvested_healthy,soilyield$N_percent,method="kendall",use="complete.obs")
+
+
+# Correlation plots for significant parameters
+library(grid)
+library(gridExtra)
+grob1 = grobTree(textGrob(paste("Kendall Correlation : ", round(cor(soilyield$Harvested_infected, soilyield$NH4_N_mg,method="kendall"), 4) ), x = 0.57, y = 0.97, hjust = 0, gp = gpar(col = "red", fontsize = 11, fontface = "bold")))
+
+ggplot(soilyield, aes(x=NH4_N_mg, y=Harvested_infected)) + geom_point() + ggtitle("Infected pods vs. NH4-N") + geom_smooth(method=lm, se=FALSE) + scale_x_continuous(name = "NH4-N") + scale_y_continuous(name = "Infected pods") + theme(plot.title = element_text(hjust = 0.5), panel.background = element_blank(), axis.line = element_line(color="black"), axis.line.x = element_line(color="black"))+annotation_custom(grob1)
+
+ggplot(soilyield, aes(x=NO3_N_mg, y=Dry_beans_kg)) + geom_point() + ggtitle("Dry beans vs. NO3-N") + geom_smooth(method=lm, se=FALSE) + scale_x_continuous(name = "NO3-N") + scale_y_continuous(name = "Dry beans (kg)") + theme(plot.title = element_text(hjust = 0.5), panel.background = element_blank(), axis.line = element_line(color="black"), axis.line.x = element_line(color="black"))
+```
+
+
+
+# Principal components of microbial communities
+```{r}
+# Add bacterial and fungal PCs (first and second)
+# rarefy
+set.seed(100)
+ps16S_rare <-rarefy_even_depth(ps16S, sample.size = min(sample_sums(ps16S)))
+psITS_rare <-rarefy_even_depth(psITS, sample.size = min(sample_sums(psITS)))
+
+
+(bactrda <- rda(otu_table(ps16S_rare)))
+summary(eigenvals(bactrda)) # only 19% of variation accounted for by first two PCs - need 16 PCs to get to 50% of variation
+
+sample_data(ps16S_rare)$PC1B <- scores(bactrda)$sites[,1]
+sample_data(ps16S_rare)$PC2B <- scores(bactrda)$sites[,2]
+
+funrda <- rda(otu_table(psITS_rare))
+sample_data(psITS_rare)$PC1F <- scores(funrda)$sites[,1]
+sample_data(psITS_rare)$PC2F <- scores(funrda)$sites[,2]
+
+# merge sample data to use for stepwise regression
+datB2 <- data.frame(sample_data(ps16S_rare)) %>%rownames_to_column("Rownames")%>%select(-Local.Label.y)
+datF2 <- data.frame(sample_data(psITS_rare))%>%rownames_to_column("Rownames")%>%select(-Local.Label.y)
+
+# stuck here
+PCBs <- data.frame(sample_data(ps16S_rare))%>% select(Local.Label.y,PC1B,PC2B)%>%rename("Rownames"="Local.Label.y")
+PCFs <- data.frame(sample_data(psITS_rare))%>%select(Local.Label.y,PC1F,PC2F)%>%rename("Rownames"="Local.Label.y")
+micPCs <- left_join(PCBs,PCFs)
+
+fullsoil2 <- fullsoil %>% rownames_to_column("Rownames")
+soilmic <- merge(fullsoil2,micPCs,by="Rownames")%>%
+  select(-CaO,-MgO,-K2O,-P2O5,-pH_KCl,-Total_Cations,-C_N,-Local.Label,-Longitude,-Latitude,-Dist_shade,-Nearest_shade,-Shade_species,-Shade_Longitude,-Shade_Latitude,-Group,-Base_sat) %>%
+  rename("% C" = "C_percent","% N" = "N_percent", 
+         "NO3-N"="NO3_N_mg","NH4-N"="NH4_N_mg", "P"="P_CitAcExt",
+         "pH"="pH_H2O",
+         "Silt"="Loam")  %>% column_to_rownames("Rownames")
+#7-20 have soil properties
+```
+
+
+# What soil properties predict the microbiome?
+```{r}
+library(caret)
+step.PC1B <- train(PC1B ~., data = soilmic[,c(7:20,21)],
+                    method = "leapSeq", #stepwise
+                    tuneGrid = data.frame(nvmax = 1:13),
+                    trControl = train.control)
+ 
+#summary(step.PC1B$finalModel) # ph_H2O only
+
+plot(varImp(step.PC1B)) # pH, Mg, %N, %C 
+importance.mic <- varImp(step.PC1B)$importance %>%rename(PC1B=Overall)
+
+
+# PC2B
+step.PC2B <- train(PC2B ~., data = soilmic[,c(7:20,22)],
+                    method = "leapSeq", #stepwise
+                    tuneGrid = data.frame(nvmax = 1:13),
+                    trControl = train.control)
+ 
+summary(step.PC2B$finalModel) # CEC
+
+plot(varImp(step.PC2B)) # Clay, Mg, NH4-N
+importance.mic[,2] <- varImp(step.PC2B)$importance %>%rename(PC2B=Overall)
+
+# PC1F
+step.PC1F <- train(PC1F ~., data = soilmic[,c(7:20,23)],
+                    method = "leapSeq", #stepwise
+                    tuneGrid = data.frame(nvmax = 1:13),
+                    trControl = train.control)
+ 
+summary(step.PC1F$finalModel) #Silt, Mg
+
+plot(varImp(step.PC1F)) #  Na, Mg, Silt
+importance.mic[,3] <- varImp(step.PC1F)$importance %>%rename(PC1F=Overall)
+
+# PC2F
+step.PC2F <- train(PC2F ~., data = soilmic[,c(7:20,24)],
+                    method = "leapSeq", #stepwise
+                    tuneGrid = data.frame(nvmax = 1:13),
+                    trControl = train.control)
+ 
+summary(step.PC2F$finalModel) # pH_H2O
+
+plot(varImp(step.PC2F)) # Clay, Ca, pH
+importance.mic[,4] <- varImp(step.PC2F)$importance %>%rename(PC2F=Overall)
+
+mat <- t(importance.mic)
+library(gplots)
+#tiff(filename='Fig4.tiff', width=180, height=180,units="mm",res=300)
+heatmap.2(x=mat,
+          dendrogram="none",
+          Rowv = NULL,
+          Colv=NULL,
+          cexRow=1,cexCol=1,
+          margins=c(9,9),
+          trace="none",key=FALSE)
+graphics.off()
+```
+
+# Is phosphorus limiting?
+```{r}
+hist(soilmic$P2O5,data=soilmic)
+
+# conversion of P2O5 to ppm: lbs P2O5 / 2.3 = lbs P /2 = ppm
+# so P2O5/4.6 = ppm
+
+hist(soilmic$P2O5/4.6) #range 0-30 but most below 20
+# see mineral nutrition of cacao
+# for cacao, minimum is thought to be 24 ppm in clay soils and 12 ppm in sandy soils
+# so P is likely inadequate/limiting here
+
+hist(soilyield$Mg) # lower adequate limit thought to be 2 cmol/kg for cacao
+
+
+hist(soilyield$N_percent) # interestingly, the majority of samples are below the recommendation of 0.15%
+hist(soilyield$C_percent) # all below recommendation of 1.75%
+```
+
+
+# What microbial taxa might predict yield?
+First, check whether addition of PCs alters the models for yield.
+```{r}
+soilmic2 <- soilmic[complete.cases(soilmic$Dry_beans_kg),]
+# check PCs - note that missing data means we have only have 39 samples to work with here
+step.dry2 <- train(Dry_beans_kg ~., data = soilmic2[,c(3,4:24)],
+                    method = "leapSeq", #stepwise
+                    tuneGrid = data.frame(nvmax = 1:20),
+                    trControl = train.control)
+summary(step.dry2$finalModel) # PC1F, P, NO3, Silt
+importance.yield <- varImp(step.dry2)$importance %>%rename(Dry_beans_kg=Overall)
+
+step.healthy2 <- train(Harvested_healthy ~., data = soilmic2[,c(1,4:24)],
+                    method = "leapSeq", #stepwise
+                    tuneGrid = data.frame(nvmax = 1:20),
+                    trControl = train.control)
+summary(step.healthy2$finalModel) # Pielou and nitrate
+importance.yield[,2] <- varImp(step.healthy2)$importance %>%rename(Healthy_Pods=Overall)
+
+step.infected2 <- train(Harvested_infected ~., data = soilmic2[,c(2,4:24)],
+                    method = "leapSeq", #stepwise
+                    tuneGrid = data.frame(nvmax = 1:20),
+                    trControl = train.control)
+summary(step.infected2$finalModel) # P, NH4
+importance.yield[,3] <- varImp(step.infected2)$importance %>%rename(Infected_Pods=Overall)
+
+mat <- t(importance.yield)
+heatmap.2(x=mat,
+          dendrogram="none",
+          Rowv = NULL,
+          Colv=NULL,
+          cexRow=1,cexCol=1,
+          margins=c(9,9),
+          trace="none",key=FALSE)
+```
+
+
+# DESeq2 method with standardized residuals of beans as continuous predictor
+```{r}
+library(phyloseq)
+library(DESeq2)
+
+ps16S_filt <- subset_samples(ps16S,sample_data(ps16S)$Local.Label.y%in% rownames(soilmic)) # 49 samples with soil, microbial data
+
+# Filter out taxa occurring in fewer than 3 samples
+ps16S_filt <- filter_taxa(ps16S_filt, function(x) sum(x > 1) > 3, TRUE)
+
+# Filter out samples without yield data
+ps16S_filt <- subset_samples(ps16S_filt,!is.na(sample_data(ps16S_filt)$Dry_beans_kg)) # 39 samples
+
+# add soil data to sample data
+soilmic$Local.Label.y=rownames(soilmic) # set up merge
+
+sample_data(ps16S_filt) <- data.frame(sample_data(ps16S_filt)) %>% rownames_to_column("Sample_names")%>%left_join(soilmic,by="Local.Label.y") %>% data.frame() %>% column_to_rownames("Sample_names")
+
+head(sample_data(ps16S_filt))
+
+beans16S <- lm(Dry_beans_kg.y~P2O5+MgO,data=data.frame(sample_data(ps16S_filt)))
+sample_data(ps16S_filt)$beans_res <- beans16S$residuals # residuals
+sample_data(ps16S_filt)$beans_std_res <- rstandard(beans16S) # standardized residuals
+
+
+#standardized residuals as continuous predictor
+ps_dds = phyloseq_to_deseq2(ps16S_filt, ~ beans_std_res)
+
+#determine best fit type 
+DDS <- estimateSizeFactors(ps_dds)
+par <- estimateDispersions(DDS, fitType = "parametric")
+loc <- estimateDispersions(DDS, fitType = "local")
+plotDispEsts(par, main= "dispEst: parametric")
+plotDispEsts(loc, main= "dispEst: local")
+
+diagdds = DESeq(ps_dds, test="Wald", fitType="local") 
+#resultsNames(diagdds)
+res = results(diagdds, name="beans_std_res", cooksCutoff = FALSE)
+alpha = 0.05
+sigtab = res[which(res$padj < alpha), ] # 0
+sigtab = cbind(as(sigtab, "data.frame"), as(tax_table(ps16S_filt)[rownames(sigtab), ], "matrix"))
+
+# need a figure showing relationship with yield
+subset_beans <- subset_taxa(ps16S_filt, taxa_names(ps16S_filt)%in%rownames(sigtab))
+dat_beans <- psmelt(subset_beans) # create data frame
+(plot_beans<-ggplot(dat_beans, aes(x=Dry_beans_kg.y, y=Abundance, col=Phylum)) + geom_point(aes(col=Phylum))+facet_wrap(Family~OTU, scales="free",ncol=2)+theme_bw()+theme(panel.grid=element_blank())+theme(legend.position="bottom")+scale_color_brewer(palette="Set2")+labs(x="Dry beans (kg)"))
+    
+```
+
+DESeq for fungi
+```{r}
+psITS_filt <- subset_samples(psITS,sample_data(psITS)$Local.Label%in% rownames(soilmic)) # 39 samples with soil, microbial data
+
+# Filter out taxa occurring in fewer than 3 samples
+psITS_filt <- filter_taxa(psITS_filt, function(x) sum(x > 1) > 3, TRUE)
+
+# Filter out samples without yield data
+psITS_filt <- subset_samples(psITS_filt,!is.na(sample_data(psITS_filt)$Dry_beans_kg)) # 39 samples
+
+# add soil data to sample data
+soilmic$Local.Label=rownames(soilmic) # set up merge
+
+sample_data(psITS_filt) <- data.frame(sample_data(psITS_filt)) %>% rownames_to_column("Sample_names")%>%left_join(soilmic,by="Local.Label") %>% data.frame() %>% column_to_rownames("Sample_names")
+
+head(sample_data(psITS_filt))
+
+beansITS <- lm(Dry_beans_kg.y~P2O5+MgO,data=data.frame(sample_data(psITS_filt)))
+sample_data(psITS_filt)$beans_res <- beansITS$residuals # residuals
+sample_data(psITS_filt)$beans_std_res <- rstandard(beansITS) # standardized residuals
+
+
+#standardized residuals as continuous predictor
+ps_dds = phyloseq_to_deseq2(psITS_filt, ~ beans_std_res)
+
+#determine best fit type 
+DDS <- estimateSizeFactors(ps_dds)
+par <- estimateDispersions(DDS, fitType = "parametric")
+loc <- estimateDispersions(DDS, fitType = "local")
+plotDispEsts(par, main= "dispEst: parametric")
+plotDispEsts(loc, main= "dispEst: local")
+
+diagdds = DESeq(ps_dds, test="Wald", fitType="local") 
+#resultsNames(diagdds)
+res = results(diagdds, name="beans_std_res", cooksCutoff = FALSE)
+alpha = 0.05
+sigtab = res[which(res$padj < alpha), ] # 0
+sigtab = cbind(as(sigtab, "data.frame"), as(tax_table(psITS_filt)[rownames(sigtab), ], "matrix")) #46
+
+# need a figure showing relationship with yield
+subset_beansITS <- subset_taxa(psITS_filt, taxa_names(psITS_filt)%in%rownames(sigtab))
+dat_beansITS <- psmelt(subset_beansITS) # create data frame
+(plot_beansITS<-ggplot(dat_beansITS, aes(x=Dry_beans_kg.y, y=Abundance, col=Phylum)) + geom_point(aes(col=Phylum))+facet_wrap(Family~OTU, scales="free",ncol=4)+theme_bw()+theme(panel.grid=element_blank())+theme(legend.position="bottom")+scale_color_brewer(palette="Set2")+labs(x="Dry beans (kg)"))
+```
 
