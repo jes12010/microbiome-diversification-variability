@@ -449,18 +449,39 @@ fullsoil %>%subset(.,complete.cases(fullsoil$Shade_species)) %>% ggplot(aes(x=Sh
 
 # Do any soil properties predict yield?
 ```{r}
+# only works when response variable is present
+# again, remove highly correlated variables
+soilyield <- fullsoil[complete.cases(fullsoil$Dry_beans_kg),c(1:3,16:37)] %>% select(-CaO,-MgO,-K2O,-P2O5,-pH_KCl,-Total_Cations,-C_N)
+
+# first, check variables for outliers - normality is not a requirement for regression, but may need to transform very skewed variables or deal with outliers
+colnames(soilyield)
+library(tidyverse)
+soilyield %>%
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free") +
+    geom_histogram()
+# none of the values seem crazy, perhaps with exception of a single high P value, but a few variables would be better transformed
+
+hist(log(soilyield$NH4_N_mg))
+soilyield$C <- exp(soilyield$C_percent)
+soilyield$P <- log(soilyield$P_CitAcExt)
+soilyield$CEC_log <- log(soilyield$CEC)
+soilyield$K_log <- log(soilyield$K)
+soilyield$NH4 <- log(soilyield$NH4_N_mg)
+
+soilyield2 <- soilyield %>% select(-NH4_N_mg,-C_percent,-P_CitAcExt,-CEC,-K)
+
 library(caret)
 # Set seed for reproducibility
 set.seed(123)
 # Set up repeated k-fold cross-validation
 train.control <- trainControl(method = "cv", number = 10)
 
-# only works when response variable is present
-# again, remove highly correlated variables
-soilyield <- fullsoil[complete.cases(fullsoil$Dry_beans_kg),c(1:3,16:37)] %>% select(-CaO,-MgO,-K2O,-P2O5,-pH_KCl,-Total_Cations,-C_N)
+
 
 # Dry beans
-step.drybeans <- train(Dry_beans_kg ~., data = soilyield[,c(3,4:18)],
+step.drybeans <- train(Dry_beans_kg ~., data = soilyield2[,c(3,4:18)],
                     method = "leapSeq", #stepwise
                     tuneGrid = data.frame(nvmax = 1:14),
                     trControl = train.control
@@ -468,14 +489,14 @@ step.drybeans <- train(Dry_beans_kg ~., data = soilyield[,c(3,4:18)],
  
 #summary(step.drybeans$finalModel) finalModel changes
 
-plot(varImp(step.drybeans)) #  P_CitAcExt,No3,Sand,Na,K
+plot(varImp(step.drybeans)) #  No3,Sand,Na,K
 importance.dry <- varImp(step.drybeans)$importance %>%rename('Dry Beans'=Overall)
 importance <- data.frame(importance.dry)
 
 ```
 
 ```{r}
-step.healthy <- train(Harvested_healthy ~., data = soilyield[,c(1,4:18)],
+step.healthy <- train(Harvested_healthy ~., data = soilyield2[,c(1,4:18)],
                     method = "leapSeq", #stepwise
                     tuneGrid = data.frame(nvmax = 1:14),
                     trControl = train.control
@@ -489,7 +510,7 @@ importance[,2] <- importance.healthy
 ```
 
 ```{r}
-step.infected <- train(Harvested_infected ~., data = soilyield[,c(2,4:18)],
+step.infected <- train(Harvested_infected ~., data = soilyield2[,c(2,4:18)],
                     method = "leapSeq", #stepwise
                     tuneGrid = data.frame(nvmax = 1:14),
                     trControl = train.control
@@ -497,7 +518,7 @@ step.infected <- train(Harvested_infected ~., data = soilyield[,c(2,4:18)],
  
 #summary(step.infected$finalModel) #P_CitAcExt
 
-plot(varImp(step.infected)) # P_CitAcExt, Loam, Mg
+plot(varImp(step.infected)) #  Loam, Mg, P
 importance.inf <- varImp(step.infected)$importance %>%rename('Infected Pods'=Overall)
 importance[,3] <- importance.inf
 ```
@@ -520,34 +541,32 @@ heatmap.2(x=mat,
 graphics.off()
 ```
 
-
-```{r}
-hist(soilyield$Harvested_healthy)
-hist(soilyield$Harvested_infected)
-hist(soilyield$Dry_beans_kg)
-hist(soilyield$P_CitAcExt,breaks=c(0,10,20,40,100,1000))
-hist(soilyield$NO3_N_mg)
-```
-
 # Are there any correlations between soil nutrients and yield?
 Use Kendall correlation coefficient (rank-based non-parametric) instead of Pearson correlation coefficient (direct correlation, only good for normal distributions).
 ```{r}
 # Healthy pods
-cor(soilyield[4:18], soilyield[3],method="kendall",use="complete.obs")
-# highest absolute values for dry beans: Sand, N_percent,Loam,K,Na, none significant
+cor(soilyield2[4:18], soilyield[2],method="kendall",use="complete.obs")
+# highest absolute values for dry beans: N_percent, Sand, Loam,K,Na, none significant
 # infected pods: NH4N p=0.049
 # healthy pods: N_percent, but not significant
-cor.test(soilyield$Harvested_healthy,soilyield$N_percent,method="kendall",use="complete.obs")
+cor.test(soilyield2$Harvested_infected,soilyield2$P,method="kendall",use="complete.obs")
 
 
 # Correlation plots for significant parameters
 library(grid)
 library(gridExtra)
-grob1 = grobTree(textGrob(paste("Kendall Correlation : ", round(cor(soilyield$Harvested_infected, soilyield$NH4_N_mg,method="kendall"), 4) ), x = 0.57, y = 0.97, hjust = 0, gp = gpar(col = "red", fontsize = 11, fontface = "bold")))
+grob1 = grobTree(textGrob(paste("Kendall Correlation : ", round(cor(soilyield2$Harvested_infected, soilyield2$NH4,method="kendall"), 3),"p=0.049" ), x = 0.48, y = 0.97, hjust = 0, gp = gpar(col = "red", fontsize = 11, fontface = "bold")))
 
-ggplot(soilyield, aes(x=NH4_N_mg, y=Harvested_infected)) + geom_point() + ggtitle("Infected pods vs. NH4-N") + geom_smooth(method=lm, se=FALSE) + scale_x_continuous(name = "NH4-N") + scale_y_continuous(name = "Infected pods") + theme(plot.title = element_text(hjust = 0.5), panel.background = element_blank(), axis.line = element_line(color="black"), axis.line.x = element_line(color="black"))+annotation_custom(grob1)
+ggplot(soilyield, aes(x=NH4_N_mg, y=Harvested_infected)) + geom_point() + ggtitle("Infected pods vs. NH4-N") + geom_smooth(method=lm, se=FALSE) + scale_x_continuous(name = "NH4-N") + scale_y_continuous(name = "Infected pods") + theme(plot.title = element_text(hjust = 0.5), panel.background = element_blank(), axis.line = element_line(color="black"), axis.line.x = element_line(color="black"))
 
 ggplot(soilyield, aes(x=NO3_N_mg, y=Dry_beans_kg)) + geom_point() + ggtitle("Dry beans vs. NO3-N") + geom_smooth(method=lm, se=FALSE) + scale_x_continuous(name = "NO3-N") + scale_y_continuous(name = "Dry beans (kg)") + theme(plot.title = element_text(hjust = 0.5), panel.background = element_blank(), axis.line = element_line(color="black"), axis.line.x = element_line(color="black"))
+
+# relationship of soil P and infected pods - re-run with different correlations
+hist(log(soilyield$P_CitAcExt)) # should log transform
+
+library(ggplot2)
+colnames(soilyield)
+ggplot(soilyield2, aes(x=NH4, y=Harvested_infected)) + geom_point() + ggtitle("Infected pods vs. NH4-N") + geom_smooth(method=lm, se=FALSE) + scale_x_continuous(name = "NH4-N (log scale)") + scale_y_continuous(name = "Infected pods") + theme(plot.title = element_text(hjust = 0.5), panel.background = element_blank(), axis.line = element_line(color="black"), axis.line.x = element_line(color="black"))+annotation_custom(grob1)
 ```
 
 
@@ -556,91 +575,121 @@ ggplot(soilyield, aes(x=NO3_N_mg, y=Dry_beans_kg)) + geom_point() + ggtitle("Dry
 ```{r}
 # Add bacterial and fungal PCs (first and second)
 # rarefy
-set.seed(100)
-ps16S_rare <-rarefy_even_depth(ps16S, sample.size = min(sample_sums(ps16S)))
-psITS_rare <-rarefy_even_depth(psITS, sample.size = min(sample_sums(psITS)))
+# set.seed(100)
+# ps16S_rare <-rarefy_even_depth(ps16S, sample.size = min(sample_sums(ps16S)))
+# psITS_rare <-rarefy_even_depth(psITS, sample.size = min(sample_sums(psITS)))
 
-
-(bactrda <- rda(otu_table(ps16S_rare)))
+library(vegan)
+library(phyloseq)
+(bactrda <- rda(otu_table(ps16S)))
 summary(eigenvals(bactrda)) # only 19% of variation accounted for by first two PCs - need 16 PCs to get to 50% of variation
 
-sample_data(ps16S_rare)$PC1B <- scores(bactrda)$sites[,1]
-sample_data(ps16S_rare)$PC2B <- scores(bactrda)$sites[,2]
+sample_data(ps16S)$PC1B <- scores(bactrda)$sites[,1]
+sample_data(ps16S)$PC2B <- scores(bactrda)$sites[,2]
 
-funrda <- rda(otu_table(psITS_rare))
-sample_data(psITS_rare)$PC1F <- scores(funrda)$sites[,1]
-sample_data(psITS_rare)$PC2F <- scores(funrda)$sites[,2]
+funrda <- rda(otu_table(psITS))
+sample_data(psITS)$PC1F <- scores(funrda)$sites[,1]
+sample_data(psITS)$PC2F <- scores(funrda)$sites[,2]
 
 # merge sample data to use for stepwise regression
-datB2 <- data.frame(sample_data(ps16S_rare)) %>%rownames_to_column("Rownames")%>%select(-Local.Label.y)
-datF2 <- data.frame(sample_data(psITS_rare))%>%rownames_to_column("Rownames")%>%select(-Local.Label.y)
+datB2 <- data.frame(sample_data(ps16S)) %>%rownames_to_column("Rownames")%>%select(-Local.Label.y)
+datF2 <- data.frame(sample_data(psITS))%>%rownames_to_column("Rownames")%>%select(-Local.Label.y)
 
-# stuck here
-PCBs <- data.frame(sample_data(ps16S_rare))%>% select(Local.Label.y,PC1B,PC2B)%>%rename("Rownames"="Local.Label.y")
-PCFs <- data.frame(sample_data(psITS_rare))%>%select(Local.Label.y,PC1F,PC2F)%>%rename("Rownames"="Local.Label.y")
+PCBs <- data.frame(sample_data(ps16S))%>% select(Local.Label.y,PC1B,PC2B)%>%rename("Rownames"="Local.Label.y")
+PCFs <- data.frame(sample_data(psITS))%>%select(Local.Label.y,PC1F,PC2F)%>%rename("Rownames"="Local.Label.y")
 micPCs <- left_join(PCBs,PCFs)
 
 fullsoil2 <- fullsoil %>% rownames_to_column("Rownames")
 soilmic <- merge(fullsoil2,micPCs,by="Rownames")%>%
   select(-CaO,-MgO,-K2O,-P2O5,-pH_KCl,-Total_Cations,-C_N,-Local.Label,-Longitude,-Latitude,-Dist_shade,-Nearest_shade,-Shade_species,-Shade_Longitude,-Shade_Latitude,-Group,-Base_sat) %>%
-  rename("% C" = "C_percent","% N" = "N_percent", 
-         "NO3-N"="NO3_N_mg","NH4-N"="NH4_N_mg", "P"="P_CitAcExt",
+  rename( "NO3-N"="NO3_N_mg","NH4-N"="NH4_N_mg", 
          "pH"="pH_H2O",
          "Silt"="Loam")  %>% column_to_rownames("Rownames")
-#7-20 have soil properties
+
+soilmic2 %>%
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free") +
+    geom_histogram()
+
+# crazy outlier for fungal communities
+soilmic2 <- subset(soilmic,PC1F<140&PC2F<140)
+# again, transform skewed variables
+
+soilmic2$C <- exp(soilmic2$C_percent)
+soilmic2$P <- log(soilmic2$P_CitAcExt)
+soilmic2$K_log <- log(soilmic2$K)
+soilmic2$NH4 <- log(soilmic2$'NH4-N')
+
+soilmic2 <- soilmic2 %>% select(-K,-`NH4-N`,-C_percent,-P_CitAcExt)%>%select(PC1B,PC2B,PC1F,PC2F,Harvested_healthy,Harvested_infected,Dry_beans_kg,everything())
 ```
 
 
 # What soil properties predict the microbiome?
 ```{r}
+colnames(soilmic2)
 library(caret)
-step.PC1B <- train(PC1B ~., data = soilmic[,c(7:20,21)],
+step.PC1B <- train(PC1B ~., data = soilmic2[,c(1,11:24)],
                     method = "leapSeq", #stepwise
                     tuneGrid = data.frame(nvmax = 1:13),
                     trControl = train.control)
- 
-#summary(step.PC1B$finalModel) # ph_H2O only
 
-plot(varImp(step.PC1B)) # pH, Mg, %N, %C 
+plot(varImp(step.PC1B)) # pH, Mg, %C,%N
 importance.mic <- varImp(step.PC1B)$importance %>%rename(PC1B=Overall)
 
 
 # PC2B
-step.PC2B <- train(PC2B ~., data = soilmic[,c(7:20,22)],
+step.PC2B <- train(PC2B ~., data = soilmic2[,c(2,11:24)],
                     method = "leapSeq", #stepwise
                     tuneGrid = data.frame(nvmax = 1:13),
                     trControl = train.control)
- 
-summary(step.PC2B$finalModel) # CEC
 
-plot(varImp(step.PC2B)) # Clay, Mg, NH4-N
+plot(varImp(step.PC2B)) # K, Clay, P
 importance.mic[,2] <- varImp(step.PC2B)$importance %>%rename(PC2B=Overall)
 
 # PC1F
-step.PC1F <- train(PC1F ~., data = soilmic[,c(7:20,23)],
+step.PC1F <- train(PC1F ~., data = soilmic2[,c(3,11:24)],
                     method = "leapSeq", #stepwise
                     tuneGrid = data.frame(nvmax = 1:13),
                     trControl = train.control)
  
 summary(step.PC1F$finalModel) #Silt, Mg
 
-plot(varImp(step.PC1F)) #  Na, Mg, Silt
+plot(varImp(step.PC1F)) #  Na, Silt, Mg
 importance.mic[,3] <- varImp(step.PC1F)$importance %>%rename(PC1F=Overall)
 
 # PC2F
-step.PC2F <- train(PC2F ~., data = soilmic[,c(7:20,24)],
+step.PC2F <- train(PC2F ~., data = soilmic2[,c(4,11:24)],
                     method = "leapSeq", #stepwise
                     tuneGrid = data.frame(nvmax = 1:13),
                     trControl = train.control)
- 
-summary(step.PC2F$finalModel) # pH_H2O
 
-plot(varImp(step.PC2F)) # Clay, Ca, pH
+plot(varImp(step.PC2F)) # pH, C, N
 importance.mic[,4] <- varImp(step.PC2F)$importance %>%rename(PC2F=Overall)
+
+# Richness
+step.Richness <- train(Richness ~., data = soilmic2[,c(8,11:24)],
+                    method = "leapSeq", #stepwise
+                    tuneGrid = data.frame(nvmax = 1:13),
+                    trControl = train.control)
+
+plot(varImp(step.Richness)) # P, N_percent, pH
+importance.mic[,5] <- varImp(step.Richness)$importance %>%rename(Richness=Overall)
+
+# Shannon
+step.Shannon <- train(Shannon ~., data = soilmic2[,c(9,11:24)],
+                    method = "leapSeq", #stepwise
+                    tuneGrid = data.frame(nvmax = 1:13),
+                    trControl = train.control)
+
+plot(varImp(step.Shannon)) # N_percent, NH4, Silt
+importance.mic[,6] <- varImp(step.Shannon)$importance %>%rename(Shannon=Overall)
+
+# Pielou is composed of the other two indices so not including
 
 mat <- t(importance.mic)
 library(gplots)
-#tiff(filename='Fig4.tiff', width=180, height=180,units="mm",res=300)
+tiff(filename='micVarImp.tiff', width=180, height=180,units="mm",res=300)
 heatmap.2(x=mat,
           dendrogram="none",
           Rowv = NULL,
@@ -651,48 +700,31 @@ heatmap.2(x=mat,
 graphics.off()
 ```
 
-# Is phosphorus limiting?
-```{r}
-hist(soilmic$P2O5,data=soilmic)
-
-# conversion of P2O5 to ppm: lbs P2O5 / 2.3 = lbs P /2 = ppm
-# so P2O5/4.6 = ppm
-
-hist(soilmic$P2O5/4.6) #range 0-30 but most below 20
-# see mineral nutrition of cacao
-# for cacao, minimum is thought to be 24 ppm in clay soils and 12 ppm in sandy soils
-# so P is likely inadequate/limiting here
-
-hist(soilyield$Mg) # lower adequate limit thought to be 2 cmol/kg for cacao
-
-
-hist(soilyield$N_percent) # interestingly, the majority of samples are below the recommendation of 0.15%
-hist(soilyield$C_percent) # all below recommendation of 1.75%
-```
-
-
-# What microbial taxa might predict yield?
+# What microbial properties might predict yield?
 First, check whether addition of PCs alters the models for yield.
 ```{r}
-soilmic2 <- soilmic[complete.cases(soilmic$Dry_beans_kg),]
-# check PCs - note that missing data means we have only have 39 samples to work with here
-step.dry2 <- train(Dry_beans_kg ~., data = soilmic2[,c(3,4:24)],
+colnames(soilmic3)
+soilmic3 <- soilmic2[complete.cases(soilmic$Dry_beans_kg),]
+# check PCs - note that missing data means we have only have 37 samples to work with here
+soilmic3 <- subset(soilmic3, !is.na(Dry_beans_kg))
+step.dry2 <- train(Dry_beans_kg ~., data = soilmic3[,c(7,1:4,8:24)],
                     method = "leapSeq", #stepwise
-                    tuneGrid = data.frame(nvmax = 1:20),
+                    tuneGrid = data.frame(nvmax = 1:15),
                     trControl = train.control)
-summary(step.dry2$finalModel) # PC1F, P, NO3, Silt
+summary(step.dry2$finalModel) # 
 importance.yield <- varImp(step.dry2)$importance %>%rename(Dry_beans_kg=Overall)
 
-step.healthy2 <- train(Harvested_healthy ~., data = soilmic2[,c(1,4:24)],
+
+step.healthy2 <- train(Harvested_healthy ~., data = soilmic3[,c(5,1:4,8:24)],
                     method = "leapSeq", #stepwise
-                    tuneGrid = data.frame(nvmax = 1:20),
+                    tuneGrid = data.frame(nvmax = 1:15),
                     trControl = train.control)
 summary(step.healthy2$finalModel) # Pielou and nitrate
 importance.yield[,2] <- varImp(step.healthy2)$importance %>%rename(Healthy_Pods=Overall)
 
-step.infected2 <- train(Harvested_infected ~., data = soilmic2[,c(2,4:24)],
+step.infected2 <- train(Harvested_infected ~., data = soilmic3[,c(6,1:4,8:24)],
                     method = "leapSeq", #stepwise
-                    tuneGrid = data.frame(nvmax = 1:20),
+                    tuneGrid = data.frame(nvmax = 1:15),
                     trControl = train.control)
 summary(step.infected2$finalModel) # P, NH4
 importance.yield[,3] <- varImp(step.infected2)$importance %>%rename(Infected_Pods=Overall)
