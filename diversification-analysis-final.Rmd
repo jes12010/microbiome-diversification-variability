@@ -138,7 +138,7 @@ TukeyHSD(aov(pH_mod)) # banana, red teak, and sengon are significantly different
 ```
 
 ## Microbial community analysis
-Comparison of alpha diversity
+Comparison of alpha diversity by shade tree presence
 ```{r}
 library(microbiomeutilities)
 #richness
@@ -154,10 +154,10 @@ div <- data.frame(sample_data(psITS)) %>% select("ID","Group","RichnessF","Shann
 (divITS <- ggplot(div,aes(x=Group,y=value))+
   geom_point(aes(col=Group))+theme_bw()+
   facet_wrap(~div,scales="free")+
-  scale_color_brewer(palette="Set2")+
+  scale_color_brewer(palette="Pastel1")+
   theme(panel.grid=element_blank())+
-  theme(text=element_text(size=14))+
-    stat_compare_means(comparisons=list(c("Monoculture","Diversification"),c("Diversification","Diversification Control")),label="p.signif",vjust=0.5)+
+  theme(text=element_text(size=10))+
+    stat_compare_means(comparisons=list(c("Diverse-Cacao","Cacao-Cacao")),label="p.signif",vjust=0.5,size=3)+
   theme(axis.text.x=element_blank(),axis.title.x=element_blank(),axis.ticks.x=element_blank())+
   theme(axis.title.y=element_blank())+theme(legend.position="bottom")+theme(legend.title=element_blank()))
 
@@ -175,40 +175,18 @@ divB <- data.frame(sample_data(ps16S)) %>% select("ID","Group","RichnessB","Shan
 (div16S <- ggplot(divB,aes(x=Group,y=value))+
   geom_point(aes(col=Group))+theme_bw()+
   facet_wrap(~div,scales="free")+
-  scale_color_brewer(palette="Set2")+
+  scale_color_brewer(palette="Pastel1")+
   theme(panel.grid=element_blank())+
-  theme(text=element_text(size=14))+
-  theme(axis.text.x=element_blank(),axis.title.x=element_blank(),axis.ticks.x=element_blank())+stat_compare_means(comparisons=list(c("Monoculture","Diversification"),c("Diversification","Diversification Control")),label="p.signif",vjust=0.5)+theme(axis.title.y=element_blank())+theme(legend.position="bottom")+theme(legend.title=element_blank()))
+  theme(text=element_text(size=10))+
+  theme(axis.text.x=element_blank(),axis.title.x=element_blank(),axis.ticks.x=element_blank())+stat_compare_means(comparisons=list(c("Diverse-Cacao","Cacao-Cacao")),label="p.signif",vjust=0.5,size=3)+theme(axis.title.y=element_blank())+theme(legend.position="bottom")+theme(legend.title=element_blank()))
 
-(divplot <- ggarrange(divITS,div16S,ncol=1,labels=c("a","b"),common.legend=TRUE,legend="bottom"))
+(divplot <- ggarrange(div16S,divITS,ncol=1,labels=c("a","b"),common.legend=TRUE,legend="bottom",font.label=list(size=10)))
+ggexport(divplot,filename="SuppFig2_div.tiff",width=1200,height=800,res=300)
+max(sample_data(psITS)$Richness)
+min(sample_data(psITS)$Richness)
 ```
 
-Overall compositions: Diversification vs. Monoculture Plots
-```{r}
-library(microViz)
-(comp16S <- ps16S %>%phyloseq::merge_samples(group = "Group")%>% tax_fix %>%
-  comp_barplot(
-    tax_level = "Phylum", n_taxa = 12,
-    bar_outline_colour = "grey5",
-    merge_other = FALSE,
-    sample_order = "bray", 
-    tax_order = sum,
-      bar_width = 0.7) + coord_flip() +
-    theme(legend.position="bottom")+theme(axis.text=element_text(size=10),axis.title=element_text(size=10),strip.text=element_text(size=10),legend.text=element_text(size=10))+ guides(fill=guide_legend(ncol=3))+ theme(legend.title = element_blank())+theme(plot.margin = margin(0, 0.6, 0, 0.5, "cm")))
-
-(compITS <- psITS %>%phyloseq::merge_samples(group = "Group")%>% tax_fix %>%
-  comp_barplot(
-    tax_level = "Phylum", n_taxa = 12,
-    bar_outline_colour = "grey5",
-    merge_other = FALSE,
-    sample_order = "bray", 
-    tax_order = sum,
-      bar_width = 0.7) + coord_flip() +
-    theme(legend.position="bottom")+theme(axis.text=element_text(size=10),axis.title=element_text(size=10),strip.text=element_text(size=10),legend.text=element_text(size=10))+ guides(fill=guide_legend(ncol=3))+ theme(legend.title = element_blank())+theme(plot.margin = margin(0, 0.5, 0, 0.5, "cm")))
-```
-
-
-PCoA ordination of microbial community composition (beta diversity)
+PCoA ordination: Effect of shade tree presence
 ```{r}
 # based on Bray-Curtis dissimilarity
 # log transform microbial communities
@@ -219,9 +197,9 @@ evalsB <- out.pcoa.logB$values[,1]
 (comp16S <- plot_ordination(ps16Slog, out.pcoa.logB, color = "Group") +
   labs(col = "Group")+ theme_bw()+
   coord_fixed(sqrt(evalsB[2] / evalsB[1]))+
-  theme(text=element_text(size=12),axis.title=element_text(size=12),legend.title=element_blank(),plot.title=element_text(hjust=0.5,size=12))+
-  scale_color_brewer(palette="Set2")+
-  theme(panel.grid=element_blank())+theme(legend.position="bottom")+ggtitle("Bacteria"))
+  theme(text=element_text(size=12),axis.title=element_text(size=12),legend.title=element_blank(),plot.title=element_blank())+
+  scale_color_brewer(palette="Pastel1")+
+  theme(panel.grid=element_blank())+theme(legend.position="bottom"))
 
 # Fungi
 psITSlog <- transform_sample_counts(psITS, function(x) log(1 + x))
@@ -231,45 +209,42 @@ evalsF <- out.pcoa.logF$values[,1]
 (compITS <- plot_ordination(psITSlog, out.pcoa.logF, color = "Group") +
   labs(col = "Group")+ theme_bw()+
   coord_fixed(sqrt(evalsF[2] / evalsF[1]))+
-  theme(text=element_text(size=12),axis.title=element_text(size=12),legend.title=element_blank(),plot.title=element_text(hjust=0.5,size=12))+
-  scale_color_brewer(palette="Set2")+
-  theme(panel.grid=element_blank())+theme(legend.position="bottom")+ggtitle("Fungi"))
-
-
+  theme(text=element_text(size=12),axis.title=element_text(size=12),legend.title=element_blank(),plot.title=element_blank())+
+  scale_color_brewer(palette="Pastel1")+
+  theme(panel.grid=element_blank())+theme(legend.position="bottom"))
 ```
 
-Effect of shade trees
+PCoA: Effect of shade tree species
 ```{r}
-ps16Sdiv <- subset_samples(ps16S,Group!="Monoculture")
-ps16Slog_samples <- transform_sample_counts(ps16Sdiv, function(x) log(1 + x))
-out.pcoa.logB_samples <- ordinate(ps16Slog_samples,  method = "PCoA", distance = "bray")
-evalsB_samples <- out.pcoa.logB_samples$values[,1]
-(shade16S <- plot_ordination(ps16Slog_samples, out.pcoa.logB_samples, color = "Shade_species") +
+ps16Slog <- transform_sample_counts(ps16S, function(x) log(1 + x))
+out.pcoa.logB <- ordinate(ps16Slog,  method = "PCoA", distance = "bray")
+evalsB <- out.pcoa.logB_samples$values[,1]
+(shade16S <- plot_ordination(ps16Slog, out.pcoa.logB, color = "Shade_species") +
  theme_bw()+
-  coord_fixed(sqrt(evalsB_samples[2] / evalsB_samples[1]))+
-  theme(plot.title=element_text(size=12,hjust=0.5),axis.title=element_text(size=12))+
+  coord_fixed(sqrt(evalsB[2] / evalsB[1]))+
+  theme(plot.title=element_blank())+
   scale_color_brewer(palette="BrBG")+
-  theme(panel.grid=element_blank())+ggtitle("Bacteria")+theme(legend.position = "bottom")+guides(col=guide_legend(ncol=3))+theme(legend.title=element_blank()))
+  theme(panel.grid=element_blank())+theme(legend.position = "bottom")+guides(col=guide_legend(ncol=3))+theme(legend.title=element_blank()))
 
 #ANOSIM is robust to unequal group sizes unlike PERMANOVA
 anosim(data.frame(otu_table(ps16S_samples)), sample_data(ps16S_samples)$Shade_species, permutations = 999, distance = "jaccard", strata = NULL) # bray p = 0.537, jaccard 0.536
  
 # Fungi
-psITSdiv <- subset_samples(psITS,Group!="Monoculture")
-psITSlog_samples <- transform_sample_counts(psITSdiv, function(x) log(1 + x))
-out.pcoa.logF_samples <- ordinate(psITSlog_samples,  method = "PCoA", distance = "bray")
-evalsF_samples <- out.pcoa.logF_samples$values[,1]
-(shadeITS <- plot_ordination(psITSlog_samples, out.pcoa.logF_samples, color = "Shade_species") +
+psITSlog <- transform_sample_counts(psITS, function(x) log(1 + x))
+out.pcoa.logF <- ordinate(psITSlog,  method = "PCoA", distance = "bray")
+evalsF <- out.pcoa.logF$values[,1]
+(shadeITS <- plot_ordination(psITSlog, out.pcoa.logF, color = "Shade_species") +
    theme_bw()+
-  coord_fixed(sqrt(evalsF_samples[2] / evalsF_samples[1]))+
-  theme(text=element_text(size=12),axis.title=element_text(size=12),plot.title=element_text(size=12,hjust=0.5))+
+  coord_fixed(sqrt(evalsF[2] / evalsF[1]))+
+  theme(text=element_text(size=12),axis.title=element_text(size=12),plot.title=element_blank())+
   scale_color_brewer(palette="BrBG")+
-  theme(panel.grid=element_blank())+ggtitle("Fungi")+theme(legend.position = "bottom")+theme(legend.title=element_blank())+guides(col=guide_legend(ncol=3)))
+  theme(panel.grid=element_blank())+theme(legend.position = "bottom")+theme(legend.title=element_blank())+guides(col=guide_legend(ncol=3)))
 
 #ANOSIM 
 anosim(data.frame(otu_table(psITS_samples)), sample_data(psITS_samples)$Shade_species, permutations = 999, distance = "bray", strata = NULL) # NS for both
 
-ggarrange(ggarrange(comp16S,compITS,ncol=2,common.legend = T,legend="bottom"),ggarrange(shade16S,shadeITS,ncol=2,common.legend=T,legend="bottom"),ncol=1,labels="auto")
+fig3 <- ggarrange(shade16S,shadeITS,ncol=2,common.legend=T,legend="bottom",labels="auto",font.label=list(size=12))
+ggexport(fig3,filename="Fig3_PCoA.tiff",width=1400,height=800,res=300)
 ```
 
 ## Distance-decay relationships
