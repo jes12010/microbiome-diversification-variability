@@ -67,8 +67,8 @@ ggexport(pcaplot,filename="Fig2_PCA.tiff",height=1200,width=1600,res=300)
 
 ```
 
-
-Visualize properties that differ between plots
+# Fig S1
+Visualize soil properties that differ between treatments
 ```{r}
 library(ggpubr)
 # separate out only soil properties
@@ -94,16 +94,16 @@ soilplot$Parameter <- factor(soilplot$Parameter,levels=c("Sand","Silt","Clay","%
 
 soilplot$Group <- factor(soilplot$Group,levels=c("Diverse-Cacao","Cacao-Cacao"))
 
-suppfig1 <- soilplot%>%
+(suppfig1 <- soilplot%>%
   ggplot(aes(x=Group,y=value))+
-  geom_point(aes(col=Group))+theme_bw()+
+  geom_boxplot(aes(col=Group))+theme_bw()+
   facet_wrap(~Parameter,scales="free",ncol=3)+
   scale_color_brewer(palette="Pastel1",drop=F)+
   theme(panel.grid=element_blank())+
   theme(text=element_text(size=14))+
   theme(axis.text.x=element_blank(),axis.title.x=element_blank(),axis.ticks.x=element_blank())+
   theme(axis.title.y=element_blank())+
-  stat_compare_means(comparisons=list(c("Diverse-Cacao","Cacao-Cacao")),label="p.signif",vjust=0.5)+theme(legend.position="bottom")
+  stat_compare_means(comparisons=list(c("Diverse-Cacao","Cacao-Cacao")),label="p.signif",vjust=1)+theme(legend.position="bottom"))
 
 ggexport(suppfig1,filename="SuppFig1_Soils.tiff",height=1800,width=1800,res=300)
 
@@ -112,7 +112,7 @@ tableout <- soilplot%>%
   group_by(Parameter,Group) %>% summarize(mean=mean(value))
 ```
 
-The above plots show that NH4-N, NO3-N, P, and pH differ by shade tree presence rather than plot. Are there effects of shade tree species on those parameters?
+ANOVA: Effects of shade species on soil properties
 ```{r}
 hist(log(fullsoil$NH4_N_mg)) # need to log-transform for normality
 NH4_mod <- lm(log(NH4_N_mg)~Shade_species,fullsoil)
@@ -138,7 +138,8 @@ TukeyHSD(aov(pH_mod)) # banana, red teak, and sengon are significantly different
 ```
 
 ## Microbial community analysis
-Comparison of alpha diversity by shade tree presence
+# Fig S2
+Comparison of alpha diversity 
 ```{r}
 library(microbiomeutilities)
 #richness
@@ -152,12 +153,12 @@ div <- data.frame(sample_data(psITS)) %>% select("ID","Group","RichnessF","Shann
   rename("Shannon Index" = "ShannonF","Pielou Index" = "PielouF","Richness"="RichnessF") %>% pivot_longer(cols=c("Richness","Shannon Index","Pielou Index"),names_to="div")
 
 (divITS <- ggplot(div,aes(x=Group,y=value))+
-  geom_point(aes(col=Group))+theme_bw()+
+  geom_boxplot(aes(col=Group))+theme_bw()+
   facet_wrap(~div,scales="free")+
   scale_color_brewer(palette="Pastel1")+
   theme(panel.grid=element_blank())+
   theme(text=element_text(size=10))+
-    stat_compare_means(comparisons=list(c("Diverse-Cacao","Cacao-Cacao")),label="p.signif",vjust=0.5,size=3)+
+    stat_compare_means(comparisons=list(c("Diverse-Cacao","Cacao-Cacao")),label="p.signif",vjust=1,size=3)+
   theme(axis.text.x=element_blank(),axis.title.x=element_blank(),axis.ticks.x=element_blank())+
   theme(axis.title.y=element_blank())+theme(legend.position="bottom")+theme(legend.title=element_blank()))
 
@@ -173,20 +174,20 @@ divB <- data.frame(sample_data(ps16S)) %>% select("ID","Group","RichnessB","Shan
   rename("Shannon Index" = "ShannonB","Pielou Index" = "PielouB","Richness"="RichnessB") %>% pivot_longer(cols=c("Richness","Shannon Index","Pielou Index"),names_to="div")
 
 (div16S <- ggplot(divB,aes(x=Group,y=value))+
-  geom_point(aes(col=Group))+theme_bw()+
+  geom_boxplot(aes(col=Group))+theme_bw()+
   facet_wrap(~div,scales="free")+
   scale_color_brewer(palette="Pastel1")+
   theme(panel.grid=element_blank())+
   theme(text=element_text(size=10))+
-  theme(axis.text.x=element_blank(),axis.title.x=element_blank(),axis.ticks.x=element_blank())+stat_compare_means(comparisons=list(c("Diverse-Cacao","Cacao-Cacao")),label="p.signif",vjust=0.5,size=3)+theme(axis.title.y=element_blank())+theme(legend.position="bottom")+theme(legend.title=element_blank()))
+  theme(axis.text.x=element_blank(),axis.title.x=element_blank(),axis.ticks.x=element_blank())+stat_compare_means(comparisons=list(c("Diverse-Cacao","Cacao-Cacao")),label="p.signif",vjust=1,size=3)+theme(axis.title.y=element_blank())+theme(legend.position="bottom")+theme(legend.title=element_blank()))
 
 (divplot <- ggarrange(div16S,divITS,ncol=1,labels=c("a","b"),common.legend=TRUE,legend="bottom",font.label=list(size=10)))
-ggexport(divplot,filename="SuppFig2_div.tiff",width=1200,height=800,res=300)
+ggexport(divplot,filename="FigS2.tiff",width=1200,height=800,res=300)
 max(sample_data(psITS)$Richness)
 min(sample_data(psITS)$Richness)
 ```
 
-PCoA ordination: Effect of shade tree presence
+PCoA: Effect of shade tree presence
 ```{r}
 # based on Bray-Curtis dissimilarity
 # log transform microbial communities
@@ -214,6 +215,7 @@ evalsF <- out.pcoa.logF$values[,1]
   theme(panel.grid=element_blank())+theme(legend.position="bottom"))
 ```
 
+# Fig 3
 PCoA: Effect of shade tree species
 ```{r}
 ps16Slog <- transform_sample_counts(ps16S, function(x) log(1 + x))
@@ -248,9 +250,9 @@ ggexport(fig3,filename="Fig3_PCoA.tiff",width=1400,height=800,res=300)
 ```
 
 ## Distance-decay relationships
-To assess distance-decay relationships (i.e. does dissimilarity between microbial communities increase with increasing geographic distance), we ran Multiple Matrix Regression (Wang et al. 2013). To visualize, we plotted Bray-Curtis distance vs. geographic distance and fit trendlines. Because we were interested in how the presence of shade trees affects these relationships, we plotted the three sample groups separately and fit separate trendlines.
+To assess distance-decay relationships (i.e. does dissimilarity between microbial communities increase with increasing geographic distance), we ran Multiple Matrix Regression (Wang et al. 2013). To visualize, we plotted Bray-Curtis distance vs. geographic distance. 
 
-First, calculate distance matrices for geographic distance
+Dissimilarity matrices for geographic distance
 ```{r }
 # Distance is in meters - see geodist vignettes.
 site_coordsB <- sample_data(ps16S) %>% data.frame() %>% select(Longitude,Latitude,Group) 
@@ -345,8 +347,8 @@ library(gridExtra)
 grid.arrange(distplotB,distplotF,ncol=2)
 ```
 
-# Multiple matrix regression analysis (MMRR)
-Wang et al. (2013) proposed this as an alternative to Mantel tests, which are increasingly thought of as less suitable for genetic/geographic analyses.
+Multiple matrix regression analysis (MMRR)
+Wang et al. (2013) proposed this as an alternative to Mantel tests.
 ```{r}
 # define functions as per Wang et al.
 MMRR<-function(Y,X,nperm=999){
@@ -432,7 +434,8 @@ XmatsF <- list(geography=distgeoF_controls)
 MMRR(distbrayF_controls,XmatsF,nperm=999) # NS (p=0.174),r2=0.029
 ```
 
-## Cacao yields
+# Fig 4
+Cacao yields
 ```{r}
 # Dry beans
 a <- fullsoil %>% subset(.,complete.cases(fullsoil$Shade_species)) %>% ggplot(aes(x=Shade_species,y=Dry_beans_kg))+geom_point(aes(col=Shade_species))+stat_compare_means(hjust=0.1,vjust=0.5)+theme_bw()+theme(panel.grid=element_blank())+scale_color_brewer(palette="BrBG")+labs(x="Shade species",y="Yield (kg dry beans)")+theme(legend.position = "none")+theme(axis.text.x=element_text(angle=45,hjust=1))
@@ -443,15 +446,14 @@ b <- fullsoil %>% subset(.,complete.cases(fullsoil$Shade_species)) %>% ggplot(ae
 # Infected pods
 (c <- fullsoil %>%subset(.,complete.cases(fullsoil$Shade_species)) %>% ggplot(aes(x=Shade_species,y=Harvested_infected))+geom_point(aes(col=Shade_species))+stat_compare_means(hjust=0.1,vjust=0.5)+theme_bw()+theme(panel.grid=element_blank())+scale_color_brewer(palette="BrBG")+labs(x="Shade species",y="Yield (infected pods)")+theme(legend.position="none")+theme(axis.text.x=element_text(angle=45,hjust=1)))
 
-ggarrange(a,b,c,ncol=1,labels=c("a","b","c"))
+fig4 <- ggarrange(a,b,c,ncol=1,labels=c("a","b","c"))
 ```
 
 ## Stepwise Regression
 Do any soil properties predict yield?
 ```{r}
-# only works when response variable is present
 # again, remove highly correlated variables
-soilyield <- fullsoil[complete.cases(fullsoil$Dry_beans_kg),c(1:3,16:37)] %>% select(-CaO,-MgO,-K2O,-P2O5,-pH_KCl,-Total_Cations,-C_N)
+soilyield <- fullsoil[complete.cases(fullsoil$Dry_beans_kg),c(1:3,12:34)] %>% select(-CaO,-MgO,-K2O,-P2O5,-pH_KCl,-Total_Cations,-C_N)
 
 # first, check variables for outliers - normality is not a requirement for regression, but may need to transform very skewed variables or deal with outliers
 colnames(soilyield)
@@ -463,14 +465,14 @@ soilyield %>%
     geom_histogram()
 # none of the values seem crazy, perhaps with exception of a single high P value, but a few variables would be better transformed
 
-hist(log(soilyield$NH4_N_mg))
+#hist(log(soilyield$NH4_N_mg))
 soilyield$C <- exp(soilyield$C_percent)
 soilyield$P <- log(soilyield$P_CitAcExt)
 soilyield$CEC_log <- log(soilyield$CEC)
 soilyield$K_log <- log(soilyield$K)
 soilyield$NH4 <- log(soilyield$NH4_N_mg)
 
-soilyield2 <- soilyield %>% select(-NH4_N_mg,-C_percent,-P_CitAcExt,-CEC,-K)%>%rename("%C"="C","%N"="N_percent","NO3-N"="NO3_N_mg","pH"="pH_H2O","NH4-N"="NH4","K"="K_log","CEC"="CEC_log","Base saturation"="Base_sat")
+soilyield2 <- soilyield %>% select(-NH4_N_mg,-C_percent,-P_Olsen,-CEC,-K)%>%rename("%C"="C","%N"="N_percent","NO3-N"="NO3_N_mg","pH"="pH_H2O","NH4-N"="NH4","K"="K_log","CEC"="CEC_log","Base saturation"="Base_sat")
 
 library(caret)
 # Set seed for reproducibility
@@ -485,7 +487,8 @@ step.drybeans <- train(Dry_beans_kg ~., data = soilyield2[,c(3,4:18)],
                     trControl = train.control
                     )
  
-#summary(step.drybeans$finalModel) finalModel changes
+summary(step.drybeans$finalModel)
+
 
 plot(varImp(step.drybeans)) #  No3,Sand,Na,K
 importance.dry <- varImp(step.drybeans)$importance %>%rename('Dry Beans'=Overall)
@@ -521,7 +524,7 @@ importance.inf <- varImp(step.infected)$importance %>%rename('Infected Pods'=Ove
 importance[,3] <- importance.inf
 ```
 
-Heatmap
+# Fig 6a: Variable importance heatmap
 ```{r}
 colnames(importance)
 importance <- importance %>% rename('Dry Beans'=Dry.Beans)
@@ -529,19 +532,19 @@ importance2 <- arrange(importance,rownames(importance))
 rownames(importance2)[rownames(importance2) == "Loam"] = "Silt"
 mat <- t(importance2)
 library(gplots)
-tiff(filename='plot_yield.tiff', width=180, height=100,units="mm",res=300)
-heatmap.2(x=mat,
+tiff(filename='Fig6a.tiff', width=180, height=100,units="mm",res=300)
+fig6a <-heatmap.2(x=mat,
           dendrogram="none",
           Rowv = NULL,
           Colv=NULL,
           cexRow=1,cexCol=1,
           margins=c(9,9),
-          trace="none",key=FALSE)
+          trace="none",key=TRUE,keysize=2,density.info="none")
 graphics.off()
 ```
 
 
-Are there any correlations between soil nutrients and yield?
+Soil - yield correlations
 Kendall correlation coefficients (rank-based, non-parametric) were used instead of Pearson correlation coefficient (direct correlation, suitable for normal distributions).
 ```{r}
 # Healthy pods
@@ -561,8 +564,6 @@ ggplot(soilyield, aes(x=NH4_N_mg, y=Harvested_infected)) + geom_point() + ggtitl
 
 ggplot(soilyield, aes(x=NO3_N_mg, y=Dry_beans_kg)) + geom_point() + ggtitle("Dry beans vs. NO3-N") + geom_smooth(method=lm, se=FALSE) + scale_x_continuous(name = "NO3-N") + scale_y_continuous(name = "Dry beans (kg)") + theme(plot.title = element_text(hjust = 0.5), panel.background = element_blank(), axis.line = element_line(color="black"), axis.line.x = element_line(color="black"))
 
-# relationship of soil P and infected pods - re-run with different correlations
-hist(log(soilyield$P_CitAcExt)) # should log transform
 
 library(ggplot2)
 colnames(soilyield)
@@ -588,7 +589,7 @@ PCBs <- data.frame(sample_data(ps16S))%>% select(Local.Label.y,PC1B,PC2B,Shannon
 PCFs <- data.frame(sample_data(psITS))%>%select(Local.Label.y,PC1F,PC2F,ShannonF,PielouF,RichnessF)%>%rename("Rownames"="Local.Label.y")
 micPCs <- left_join(PCBs,PCFs)
 
-fullsoil2 <- fullsoil %>% select(-Rownames,-Group.x,-Group.y,-PC1F,-PC2F,-ShannonF,-RichnessF,-PielouF) %>% rownames_to_column("Rownames")
+fullsoil2 <- fullsoil %>% select(-Group) %>% rownames_to_column("Rownames")
 soilmic <- merge(fullsoil2,micPCs,by="Rownames")%>%
   select(-CaO,-MgO,-K2O,-P2O5,-pH_KCl,-Total_Cations,-C_N,-Local.Label,-Longitude,-Latitude,-Nearest_shade,-Shade_species,-Shade_Longitude,-Shade_Latitude,-Base_sat) %>%
   rename( "NO3-N"="NO3_N_mg", 
@@ -609,8 +610,8 @@ soilmic2$P <- log(soilmic2$P_CitAcExt)
 soilmic2$K_log <- log(soilmic2$K)
 soilmic2$`NH4-N` <- log(soilmic2$NH4_N_mg)
 
-soilmic2 <- soilmic2 %>% select(-K,-NH4_N_mg,-C_percent,-P_CitAcExt)%>%
-  rename("K"="K_log","Silt"="Loam")%>%select(Harvested_healthy,Harvested_infected,Dry_beans_kg,PC1B,PC2B,ShannonB,PielouB,RichnessB,PC1F,PC2F,ShannonF,PielouF,RichnessF,everything())
+soilmic2 <- soilmic2 %>% select(-K,-NH4_N_mg,-C_percent,-P_Olsen)%>%
+  rename("K"="K_log")%>%select(Harvested_healthy,Harvested_infected,Dry_beans_kg,PC1B,PC2B,ShannonB,PielouB,RichnessB,PC1F,PC2F,ShannonF,PielouF,RichnessF,everything())
 ```
 
 
@@ -699,21 +700,23 @@ importance.mic[,8] <- varImp(step.ShannonF)$importance %>%rename(ShannonF=Overal
 
 mat <- t(importance.mic)
 library(gplots)
-tiff(filename='plot_mic_heatmap.tiff', width=180, height=180,units="mm",res=300)
-heatmap.2(x=mat,
+tiff(filename='Fig5.tiff', width=180, height=180,units="mm",res=300)
+fig6b<-heatmap.2(x=mat,
           dendrogram="none",
           Rowv = NULL,
           Colv=NULL,
           cexRow=1,cexCol=1,
           margins=c(9,9),
-          trace="none",key=FALSE)
+          trace="none",key=TRUE,keysize=1.5)
 graphics.off()
+
+
 ```
 
 Stepwise regression: does inclusion of microbial parameters alter the models for yield?
 ```{r}
-soilmic3 <- soilmic2[complete.cases(soilmic2$Dry_beans_kg),]%>%select(-PielouB,-PielouF,-Sand) # remove collinear variables
-# missing yield data means we have only have 37 samples to work with here
+soilmic3 <- soilmic2[complete.cases(soilmic2$Dry_beans_kg),]%>%select(-PielouB,-PielouF,-Sand,-P_CitAcExt) # remove collinear variables
+# missing yield data means we have only have 39 samples to work with here
 
 step.dry2 <- train(Dry_beans_kg ~., data = soilmic3[,c(3,4:24)],
                     method = "leapSeq", #stepwise
@@ -745,29 +748,27 @@ heatmap.2(x=mat,
           Rowv = NULL,
           Colv=NULL,
           cexRow=1,cexCol=1,
-          margins=c(9,9),
-          trace="none",key=FALSE)
+          margins=c(6,6),
+          trace="none",key=TRUE,keysize=2)
 dev.off()
 ```
 
 Correlations of microbial properties and yield
 ```{r}
-cor(soilmic2[1], soilmic2[c(4:27)],method="kendall",use="complete.obs")
-cor.test(soilmic2$ShannonF,soilmic2$Harvested_healthy,method="kendall",use="complete.obs") # p= 0.0086 (others NS)
+cor.test(soilmic2$ShannonF,soilmic2$Harvested_healthy,method="kendall",use="complete.obs") # tau 0.26, p=0.020
 
-cor(soilmic2$Dry_beans_kg, soilmic2[c(4:27)],method="kendall",use="complete.obs")
-cor.test(soilmic2$ShannonF,soilmic2$Dry_beans_kg,method="kendall",use="complete.obs") # p= 0.0049 (others NS)
+cor.test(soilmic2$Dry_beans_kg, soilmic2$ShannonF,method="kendall",use="complete.obs") # tau 0.28, p=0.012
 
-cor(soilmic2$Harvested_infected, soilmic2[c(4:27)],method="kendall",use="complete.obs")
-cor.test(soilmic2$NH4,soilmic2$Harvested_infected,method="kendall")
-#p=0.057
+cor.test(soilmic2$Harvested_infected, soilmic2$ShannonB,method="kendall",use="complete.obs") # tau 0.065,p=0.568
 
-# Correlation plots for significant parameters
-library(grid)
-library(gridExtra)
-grob1 = grobTree(textGrob(paste("Kendall Correlation : ", round(cor(soilmic2$Harvested_healthy, soilmic2$ShannonF,method="kendall",use="complete.obs"), 3),"p=0.0086" ), x = 0.4, y = 0.97, hjust = 0, gp = gpar(col = "red", fontsize = 11, fontface = "bold")))
+cor.test(soilmic2$Harvested_infected, soilmic2$PC1B,method="kendall") # tau 0.032, p=0.78
 
-ggplot(soilmic2, aes(x=ShannonF, y=Harvested_healthy)) + geom_point() + ggtitle("Healthy pods vs. fungal diversity") + geom_smooth(method=lm, se=FALSE) + scale_x_continuous(name = "Shannon index") + scale_y_continuous(name = "Harvested pods") + theme(plot.title = element_text(hjust = 0.5), panel.background = element_blank(), axis.line = element_line(color="black"), axis.line.x = element_line(color="black"))+annotation_custom(grob1)
+cor.test(soilmic2$Harvested_infected,soilmic2$PC2B,method="kendall")
+# tau -0.043, p= 0.7
+
+cor.test(soilmic2$Harvested_healthy, soilmic2$PC2F,method="kendall")
+cor.test(soilmic2$Harvested_infected,soilmic2$PC2F,method="kendall")
+# both p NS, tau 0.098,0.026
 ```
 
 # Which fungi are in PC2F?
@@ -802,4 +803,29 @@ dev.off()
 
 #saveRDS(pc2f,"PC2F.rds")
 ```
+
+# Fungal functional predictions for PC2F
+```{r}
+# use microeco package with existing phyloseq objects
+library(microeco)
+# create microtable object
+dataset2 <- microtable$new(sample_table = sample_data(pc2f), otu_table = as.matrix(t(otu_table(pc2f))), tax_table = as.data.frame(tax_table(pc2f)))
+dataset2$tidy_dataset() # have to transpose asv table or get error
+
+# create trans_func object
+t2 <- trans_func$new(dataset2)
+# identify species traits, automatically select database for prokaryotes or fungi
+# fungi_database = "FungalTraits" for the FungalTraits database
+t2$cal_spe_func(fungi_database = "FUNGuild")
+pc2f_funguild <- t2$res_spe_func_raw_funguild
+
+pc2f_funguild %>% filter(confidenceRanking=="Probable") %>% group_by(trophicMode)%>%tally()
+
+t2$cal_spe_func(fungi_database="FungalTraits")
+pc2f_fungaltraits <- t2$res_spe_func_raw_FungalTraits
+
+pc2f_fungaltraits %>%  group_by(primary_lifestyle)%>%tally()
+# fungal traits appears to be more helpful here
+```
+
 
