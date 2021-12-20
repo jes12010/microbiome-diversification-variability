@@ -182,7 +182,7 @@ divB <- data.frame(sample_data(ps16S)) %>% select("ID","Group","RichnessB","Shan
   theme(axis.text.x=element_blank(),axis.title.x=element_blank(),axis.ticks.x=element_blank())+stat_compare_means(comparisons=list(c("Diverse-Cacao","Cacao-Cacao")),label="p.signif",vjust=1,size=3)+theme(axis.title.y=element_blank())+theme(legend.position="bottom")+theme(legend.title=element_blank()))
 
 (divplot <- ggarrange(div16S,divITS,ncol=1,labels=c("a","b"),common.legend=TRUE,legend="bottom",font.label=list(size=10)))
-ggexport(divplot,filename="FigS2.tiff",width=1200,height=800,res=300)
+#ggexport(divplot,filename="FigS2.tiff",width=1200,height=800,res=300)
 max(sample_data(psITS)$Richness)
 min(sample_data(psITS)$Richness)
 ```
@@ -614,7 +614,7 @@ soilmic2 <- soilmic2 %>% select(-K,-NH4_N_mg,-C_percent,-P_Olsen)%>%
   rename("K"="K_log")%>%select(Harvested_healthy,Harvested_infected,Dry_beans_kg,PC1B,PC2B,ShannonB,PielouB,RichnessB,PC1F,PC2F,ShannonF,PielouF,RichnessF,everything())
 ```
 
-
+# Fig 5
 Stepwise regression: What soil properties predict the microbiome?
 ```{r}
 colnames(soilmic2)
@@ -713,6 +713,7 @@ graphics.off()
 
 ```
 
+# Fig 6b
 Stepwise regression: does inclusion of microbial parameters alter the models for yield?
 ```{r}
 soilmic3 <- soilmic2[complete.cases(soilmic2$Dry_beans_kg),]%>%select(-PielouB,-PielouF,-Sand,-P_CitAcExt) # remove collinear variables
@@ -753,6 +754,7 @@ heatmap.2(x=mat,
 dev.off()
 ```
 
+## Exploring microbial taxa and functions of importance
 Correlations of microbial properties and yield
 ```{r}
 cor.test(soilmic2$ShannonF,soilmic2$Harvested_healthy,method="kendall",use="complete.obs") # tau 0.26, p=0.020
@@ -771,7 +773,62 @@ cor.test(soilmic2$Harvested_infected,soilmic2$PC2F,method="kendall")
 # both p NS, tau 0.098,0.026
 ```
 
-# Which fungi are in PC2F?
+Which bacterial taxa are in PC1B and PC2B?
+```{r}
+# perform same PCA as previously
+ps16S_filt <- filter_taxa(ps16S, function(x) sum(x > 1) > 3, TRUE)
+
+(rda16S <- rda(otu_table(ps16S_filt),scale=FALSE)) # scaling would mean species have unit variance
+
+biplot(rda16S,
+       display = c("sites",  "species"),
+       type = c("text","points"))
+
+# top 100 loadings on PC1B
+pc1b_top <- data.frame(scores(rda16S, choices = 1, display = "species", scaling = 0))%>% slice_max(order_by=PC1,n=100) %>% rownames_to_column("ASV") 
+
+# top 100 loadings on PC2B
+pc2b_top <- data.frame(scores(rda16S, choices = 2, display = "species", scaling = 0))%>% slice_max(order_by=PC2,n=100) %>% rownames_to_column("ASV") 
+
+pc1b <- subset_taxa(ps16S_filt,taxa_names(ps16S_filt) %in% pc1b_top$ASV) 
+pc2b <- subset_taxa(ps16S_filt,taxa_names(ps16S_filt) %in% pc2b_top$ASV)
+
+head(tax_table(pc1b))
+library(metacoder)
+pc1b_obj <- parse_phyloseq(pc1b)
+print(pc1b_obj)
+set.seed(1)
+#tiff('pc1b.tiff', units="in", width=5, height=4, res=300, compression = 'lzw')
+pc1b_heat <- heat_tree(pc1b_obj, 
+          node_label = taxon_names,
+          node_size = n_obs,
+          node_color = n_obs,
+          node_color_axis_label= NULL,
+          node_size_axis_label = "ASV count",
+          layout = "davidson-harel", # The primary layout algorithm
+          initial_layout = "reingold-tilford")
+#dev.off()
+
+pc1b_heat
+
+pc2b_obj <- parse_phyloseq(pc2b)
+print(pc2b_obj)
+set.seed(1)
+#tiff('pc1b.tiff', units="in", width=5, height=4, res=300, compression = 'lzw')
+pc2b_heat <- heat_tree(pc2b_obj, 
+          node_label = taxon_names,
+          node_size = n_obs,
+          node_color = n_obs,
+          node_color_axis_label= NULL,
+          node_size_axis_label = "ASV count",
+          layout = "davidson-harel", # The primary layout algorithm
+          initial_layout = "reingold-tilford")
+#dev.off()
+
+pc2b_heat
+```
+
+Which fungal taxa are in PC2F?
 ```{r}
 psITS_filt <- filter_taxa(psITS, function(x) sum(x > 1) > 3, TRUE)
 #PCA using vegan::rda
@@ -792,40 +849,80 @@ library(metacoder)
 obj <- parse_phyloseq(pc2f,class_key="taxon_name")
 print(obj)
 set.seed(1)
-tiff('test.tiff', units="in", width=5, height=4, res=300, compression = 'lzw')
-obj_heat <- heat_tree(obj, 
+tiff('pc2f.tiff', units="in", width=5, height=4, res=300, compression = 'lzw')
+pc2f_heat <- heat_tree(obj, 
           node_label = taxon_names,
           node_size = n_obs,
-          node_size_axis_label = "OTU count",
+          node_color = n_obs,
+          node_color_axis_label= NULL,
+          node_size_axis_label = "ASV count",
           layout = "davidson-harel", # The primary layout algorithm
           initial_layout = "reingold-tilford") # The layout algorithm that initializes node locations
-dev.off()
 
-#saveRDS(pc2f,"PC2F.rds")
+pc2f_heat
+
+
+(figs3 <- ggarrange(pc1b_heat,pc2b_heat,pc2f_heat,labels=c("a","b","c"),ncol=1,font.label=list(size=10)))
+ggexport(figs3,filename="FigS3.tiff",width=900,height=1800,res=300)
 ```
 
-# Fungal functional predictions for PC2F
+# Functional predictions for PC1B and PC2B
+Not very informative - large percentages of 0 values.
+```{r}
+library(microeco)
+pc1b_micro <- microtable$new(sample_table = sample_data(pc1b), otu_table = as.matrix(t(otu_table(pc1b))), tax_table = as.data.frame(tax_table(pc1b)))
+pc1b_micro$tidy_dataset() 
+
+# create trans_func object
+pc1b_func <- trans_func$new(pc1b_micro)
+# identify species traits
+pc1b_func$cal_spe_func(prok_database = "FAPROTAX")
+pc1b_fap <- pc1b_func$res_spe_func
+pc1b_fap %>% summarise(across(where(is.numeric), ~ sum(.x)))
+```
+
+
+```{r}
+pc2b_micro <- microtable$new(sample_table = sample_data(pc2b), otu_table = as.matrix(t(otu_table(pc2b))), tax_table = as.data.frame(tax_table(pc2b)))
+pc2b_micro$tidy_dataset() 
+
+# create trans_func object
+pc2b_func <- trans_func$new(pc2b_micro)
+# identify species traits
+pc2b_func$cal_spe_func(prok_database = "FAPROTAX")
+pc2b_fap <- pc2b_func$res_spe_func
+pc2b_fap %>% summarise(across(where(is.numeric), ~ sum(.x)))
+```
+
+# Functional guild assignments for PC2F
 ```{r}
 # use microeco package with existing phyloseq objects
 library(microeco)
 # create microtable object
-dataset2 <- microtable$new(sample_table = sample_data(pc2f), otu_table = as.matrix(t(otu_table(pc2f))), tax_table = as.data.frame(tax_table(pc2f)))
-dataset2$tidy_dataset() # have to transpose asv table or get error
+pc2f_micro <- microtable$new(sample_table = sample_data(pc2f), otu_table = as.matrix(t(otu_table(pc2f))), tax_table = as.data.frame(tax_table(pc2f)))
+pc2f_micro$tidy_dataset() # have to transpose asv table or get error
 
 # create trans_func object
-t2 <- trans_func$new(dataset2)
+pc2f_func <- trans_func$new(pc2f_micro)
 # identify species traits, automatically select database for prokaryotes or fungi
 # fungi_database = "FungalTraits" for the FungalTraits database
-t2$cal_spe_func(fungi_database = "FUNGuild")
-pc2f_funguild <- t2$res_spe_func_raw_funguild
+pc2f_func$cal_spe_func(fungi_database = "FUNGuild")
+pc2f_funguild <- pc2f_func$res_spe_func_raw_funguild
 
-pc2f_funguild %>% filter(confidenceRanking=="Probable") %>% group_by(trophicMode)%>%tally()
+pc2f_funguild %>% filter(confidenceRanking=="Probable") %>% group_by(trophicMode) %>% tally()
 
-t2$cal_spe_func(fungi_database="FungalTraits")
-pc2f_fungaltraits <- t2$res_spe_func_raw_FungalTraits
+pc2f_func$cal_spe_func(fungi_database="FungalTraits")
+pc2f_fungaltraits <- pc2f_func$res_spe_func_raw_FungalTraits
 
 pc2f_fungaltraits %>%  group_by(primary_lifestyle)%>%tally()
 # fungal traits appears to be more helpful here
+
+pc2f_fungaltraits %>% rename("Primary Lifestyle"="primary_lifestyle") %>% mutate_if(is.character, str_replace_all, pattern = '_', replacement = ' ') %>%mutate_if(is.character, str_replace_na, replacement = 'unassigned')%>% count(`Primary Lifestyle` = factor(`Primary Lifestyle`)) %>% 
+    mutate(pct = prop.table(n)) %>%  ggplot(aes(x=`Primary Lifestyle`,y=pct*100,fill=`Primary Lifestyle`,label = scales::percent(pct)))+scale_fill_brewer(palette="BrBG")+geom_col()+theme_bw()+theme(panel.grid=element_blank())+theme(axis.text.x=element_text(angle=90,hjust=1))+theme(legend.position="none")+labs(y="# ASVs")+geom_text(position = position_dodge(width = .9),    # move to center of bars
+              vjust = -0.5,    # nudge above top of bar
+              size = 3)+lims(y=c(0,40))
+
+
 ```
 
 
